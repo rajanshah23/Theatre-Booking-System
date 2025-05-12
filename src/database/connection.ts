@@ -1,14 +1,21 @@
 import { Sequelize } from "sequelize-typescript";
-import { envConfig } from "../config/config";
+import dotenv from "dotenv";
+dotenv.config();
 
-const sequelize = new Sequelize(envConfig.connectionString as string);
+import { User } from "./models/User";
+import { Show } from "./models/Show";
+import { Booking } from "./models/Booking";
+import { Seat } from "./models/Seat";
+import { Payment } from "./models/Payment";
+import { Review } from "./models/Review";
 
-sequelize.authenticate()
-  .then(() => {
-    console.log("Database Connected Successfully");
-  })
-  .catch((err) => {
-    console.log("Error encountered:", err.message);  
-  });
-
-  export default sequelize
+export const sequelize = new Sequelize({
+  database: process.env.DB_NAME,
+  host: process.env.DB_HOST,
+  port: Number(process.env.DB_PORT),
+  dialect: "postgres",
+  username: process.env.DB_USER,
+  password: process.env.DB_PASS,
+  models: [User, Show, Booking, Seat, Payment, Review],
+});
+export default sequelize;
