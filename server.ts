@@ -1,6 +1,6 @@
-import app from "./src/app";
-import { envConfig } from "./src/config/config";
-import { sequelize } from "./src/database/connection";
+import app from './src/app';
+import { envConfig } from './src/config/config';
+import { sequelize } from './src/database/connection';
 
 function startServer() {
   const port = envConfig.port || 4000;
@@ -9,12 +9,11 @@ function startServer() {
   });
 }
 
- 
 sequelize.sync({ alter: true })
   .then(() => {
-    console.log("Tables created successfully!");
+    console.log('Tables created successfully!');
     startServer();
   })
   .catch((err) => {
-    console.error("Error on creating  tables:", err);
+    console.error('Error on creating tables:', err);
   });

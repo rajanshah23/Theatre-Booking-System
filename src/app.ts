@@ -1,5 +1,22 @@
-import express from'express'
-const app=express()
-import './database/connection'
+import express from "express";
+import userRoute from "./routes/userRoute";
+import dotenv from 'dotenv';
+dotenv.config();
 
-export default app
+require("./database/connection");
+
+const app = express();
+
+app.use(express.json());
+
+app.get("/", (req, res) => {
+  res.status(200).json({
+    status: "success",
+    message: "Rest API is working",
+  });
+});
+
+app.use("/api/auth", userRoute);
+ 
+
+export default app;
