@@ -1,4 +1,4 @@
-import { Table, Column, Model, DataType, HasMany, BeforeCreate } from 'sequelize-typescript';
+import {Table,Column,Model,DataType,HasMany,BeforeCreate,} from 'sequelize-typescript';
 import { Booking } from './Booking';
 import { Review } from './Review';
 import bcrypt from 'bcrypt';
@@ -16,6 +16,13 @@ export class User extends Model {
 
   @Column({ type: DataType.ENUM('customer', 'admin'), defaultValue: 'customer' })
   role!: 'customer' | 'admin';
+
+ 
+  @Column({ type: DataType.STRING, allowNull: true })
+  otp?: string;
+
+  @Column({ type: DataType.STRING, allowNull: true })
+  otpGeneratedTime?: string;
 
   @HasMany(() => Booking)
   bookings!: Booking[];
