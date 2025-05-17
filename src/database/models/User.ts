@@ -1,10 +1,16 @@
-import {Table,Column,Model,DataType,HasMany,BeforeCreate,} from 'sequelize-typescript';
+import {Table,Column,Model,DataType,HasMany,BeforeCreate,  PrimaryKey,
+  AutoIncrement,} from 'sequelize-typescript';
 import { Booking } from './Booking';
 import { Review } from './Review';
 import bcrypt from 'bcrypt';
 
 @Table
 export class User extends Model {
+   @PrimaryKey
+  @AutoIncrement
+  @Column(DataType.INTEGER)
+  id!: number;
+
   @Column({ type: DataType.STRING, allowNull: true })
   username!: string;
 

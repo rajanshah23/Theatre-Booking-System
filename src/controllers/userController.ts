@@ -88,69 +88,68 @@ class UserController {
       return res.status(500).json({ message: "Failed to send OTP email" });
     }
   }
- static async verifyOtp(req: Request, res: Response) {
+  static async verifyOtp(req: Request, res: Response) {
     const { otp, email } = req.body;
 
     if (!otp || !email) {
-        return sendResponse(res, 400, "Please provide OTP and email");
+      return sendResponse(res, 400, "Please provide OTP and email");
     }
 
     try {
-        // First check if user exists
-        const user = await User.findOne({ where: { email } });
-        if (!user) {
-            return sendResponse(res, 404, "No user with that email");
-        }
- 
-        const otpData = await User.findOne({
-            where: {
-                email,
-                otp: String(otp)   
-            }
-        });
+      // First check if user exists
+      const user = await User.findOne({ where: { email } });
+      if (!user) {
+        return sendResponse(res, 404, "No user with that email");
+      }
 
-        if (!otpData) {
-            return sendResponse(res, 401, "Invalid OTP");
-        }
+      const otpData = await User.findOne({
+        where: {
+          email,
+          otp: String(otp),
+        },
+      });
 
-        if (!otpData.otpGeneratedTime) {
-            return sendResponse(res, 500, "OTP generation time missing");
-        }
+      if (!otpData) {
+        return sendResponse(res, 401, "Invalid OTP");
+      }
 
-   
-        checkOtpExpiration(res, otpData.otpGeneratedTime, 120000);
-        return;
+      if (!otpData.otpGeneratedTime) {
+        return sendResponse(res, 500, "OTP generation time missing");
+      }
 
+      checkOtpExpiration(res, otpData.otpGeneratedTime, 120000);
+      return;
     } catch (error) {
-        console.error("OTP verification error:", error);
-        return sendResponse(res, 500, "Internal server error during OTP verification");
+      console.error("OTP verification error:", error);
+      return sendResponse(
+        res,
+        500,
+        "Internal server error during OTP verification"
+      );
     }
-}
- static async resetPassword(req:Request,res:Response){
-        const {newPassword,confirmPassword,email} = req.body 
-        if(!newPassword || !confirmPassword || !email){
-            sendResponse(res,400,'please provide newPassword,confirmPassword,email,otp')
-            return
-        }
-        if(newPassword !== confirmPassword){
-            sendResponse(res,400,'newpassword and confirm password must be same')
-            return
-        }
-        const user = await finalData(User,email)
-        if(!user){
-            sendResponse(res,404,'No email with that user')
-        }
-        user.password = bcrypt.hashSync(newPassword,12)
-        await user.save()
-        sendResponse(res,200,"Password reset successfully!!!")
-
+  }
+  static async resetPassword(req: Request, res: Response) {
+    const { newPassword, confirmPassword, email } = req.body;
+    if (!newPassword || !confirmPassword || !email) {
+      sendResponse(
+        res,
+        400,
+        "please provide newPassword,confirmPassword,email,otp"
+      );
+      return;
     }
-
-
-
-
-
-
+    if (newPassword !== confirmPassword) {
+      sendResponse(res, 400, "Newpassword and Confirm password must be same");
+      return;
+    }
+    const user = await finalData(User, email);
+    if (!user) {
+      sendResponse(res, 404, "No email with that user");
+    }
+    user.password = bcrypt.hashSync(newPassword, 12);
+    await user.save();
+    sendResponse(res, 200, "Password reset successfully!!!");
+  }
 }
 
 export default UserController;
