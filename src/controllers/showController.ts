@@ -34,7 +34,7 @@ class ShowController {
           date: "2025-05-15",
           time: "18:00",
           totalSeats: 100,
-          image: "https://example.com/image1.jpg",
+          image: "https://i.gadgets360cdn.com/products/large/Final-Destination-Bloodlines-2-1422x800-1743500570068.jpg?downsize=*:420 ",
         },
         {
           title: "Jaari",
@@ -42,7 +42,7 @@ class ShowController {
           date: "2025-06-02",
           time: "20:00",
           totalSeats: 80,
-          image: "https://example.com/image2.jpg",
+          image: "https://imgs.search.brave.com/zmakM_c-sciQbi825kd73kaAhZw4ri_igBBwvRxwAtM/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9tLm1l/ZGlhLWFtYXpvbi5j/b20vaW1hZ2VzL00v/TVY1Qk16STJOalpp/TkdNdE5tWTVNQzAw/WTJKbExXRm1ZMlF0/TkRVMk5tTTRPR05s/WW1GaFhrRXlYa0Zx/Y0djQC5qcGc  ",
         },
         {
           title: "Unko Sweater-The Woolen Sweater",
@@ -50,14 +50,14 @@ class ShowController {
           date: "2025-06-03",
           time: "17:30",
           totalSeats: 120,
-          image: "https://example.com/image3.jpg",
+          image: "https://imgs.search.brave.com/AFZuopO2WY5iQn61c2LRDKyiSjR1bWFMvZYnLoTjQTY/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9kMzJx/eXM5YTZ3bTluby5j/bG91ZGZyb250Lm5l/dC9pbWFnZXMvbW92/aWVzL3Bvc3Rlci9i/ZS8xMTAyZDUzYjFh/ODAwMmJiZTcyMTAy/MzFjMDZkNWM2ZV8z/MDB4NDQyLmpwZz90/PTE3NDY1Nzc3MDE",
         },
       ];
 
       await Show.bulkCreate(dummyShows);
-      console.log("✅ Successfully auto-seeded", dummyShows.length, "shows");
+      console.log(" Successfully auto-seeded", dummyShows.length, "shows");
     } catch (error) {
-      console.error("❌ Auto-seeding failed:", error);
+      console.error(" Auto-seeding failed:", error);
     }
   }
 
@@ -78,7 +78,7 @@ class ShowController {
         return;
       }
 
-      // Check for overlapping shows
+ 
       const overlappingShow = await Show.findOne({
         where: {
           date: showDate,
@@ -145,8 +145,7 @@ class ShowController {
         sendResponse(res, 404, "Show not found");
         return;
       }
-
-      // Check for time slot conflicts (excluding current show)
+ 
       if (showDate || showTime) {
         const targetDate = showDate || show.date;
         const targetTime = showTime || show.time;
