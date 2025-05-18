@@ -34,7 +34,7 @@ class UserController {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return sendResponse(res, 404, "Please provid email and password");
+      return sendResponse(res, 404, "Please provide email and password");
     }
 
     const user = await finalData(User, email);
@@ -150,6 +150,7 @@ class UserController {
     await user.save();
     sendResponse(res, 200, "Password reset successfully!!!");
   }
+    
 }
 
 export default UserController;

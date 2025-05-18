@@ -1,6 +1,8 @@
 import express from "express";
 import userRoute from "./routes/userRoute";
-import dotenv from 'dotenv';
+import dotenv from "dotenv";
+import showRoute from "./routes/showRoute";
+ 
 dotenv.config();
 
 require("./database/connection");
@@ -15,8 +17,8 @@ app.get("/", (req, res) => {
     message: "Rest API is working",
   });
 });
-
-app.use("/api/auth", userRoute);
  
+app.use("/api/auth", userRoute);
+app.use("/api/shows", showRoute);
 
 export default app;

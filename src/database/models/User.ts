@@ -9,7 +9,7 @@ export class User extends Model {
    @PrimaryKey
   @AutoIncrement
   @Column(DataType.INTEGER)
-  id!: number;
+  id!: string;
 
   @Column({ type: DataType.STRING, allowNull: true })
   username!: string;
@@ -20,7 +20,7 @@ export class User extends Model {
   @Column({ type: DataType.STRING, allowNull: false })
   password!: string;
 
-  @Column({ type: DataType.ENUM('customer', 'admin'), defaultValue: 'customer' })
+  @Column({ type: DataType.ENUM('User', 'admin'), defaultValue: 'User' })
   role!: 'customer' | 'admin';
 
  

@@ -3,12 +3,16 @@ import { Booking } from './Booking';
 import { Seat } from './Seat';
 import { Review } from './Review';
 
-@Table
-export class Show extends Model {
+@Table({
+    tableName : "Show", 
+    modelName : "Show", 
+    timestamps : true
+})
+  export class Show extends Model {
   @Column({ type: DataType.STRING, allowNull: false })
   title!: string;
 
-  @Column(DataType.TEXT)
+  @Column(DataType.TEXT('long'))
   description?: string;
 
   @Column({ type: DataType.DATEONLY, allowNull: false })
@@ -19,6 +23,8 @@ export class Show extends Model {
 
   @Column({ type: DataType.INTEGER, allowNull: false })
   totalSeats!: number;
+  
+  @Column(DataType.STRING) image?: string;
 
   @HasMany(() => Booking)
   bookings!: Booking[];
@@ -29,3 +35,4 @@ export class Show extends Model {
   @HasMany(() => Review)
   reviews!: Review[];
 }
+ 
