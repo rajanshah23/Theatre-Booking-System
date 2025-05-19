@@ -49,7 +49,7 @@ class UserController {
       return res.status(400).json({ message: "Invalid Password" });
     }
 
-    const token = Jwt.sign({ userId: user.id }, "hahah", { expiresIn: "10d" });
+    const token = Jwt.sign({ userId: user.id },process.env.JWT_SECRET_KEY as string,{ expiresIn: "10d" });
 
     return sendResponse(res, 200, "Logged in Successfully 🥰", token);
   }

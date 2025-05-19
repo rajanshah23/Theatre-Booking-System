@@ -1,18 +1,21 @@
-import { Table, Column, Model, DataType, HasMany } from 'sequelize-typescript';
-import { Booking } from './Booking';
-import { Seat } from './Seat';
-import { Review } from './Review';
+import { Table, Column, Model, DataType, HasMany } from "sequelize-typescript";
+import { Booking } from "./Booking";
+import { Seat } from "./Seat";
+import { Review } from "./Review";
 
 @Table({
-    tableName : "Show", 
-    modelName : "Show", 
-    timestamps : true
+  tableName: "Show",
+  modelName: "Show",
+  timestamps: true,
 })
-  export class Show extends Model {
+export class Show extends Model {
+  @Column({ type: DataType.INTEGER, primaryKey: true, autoIncrement: true })
+  id!: number;
+
   @Column({ type: DataType.STRING, allowNull: false })
   title!: string;
 
-  @Column(DataType.TEXT('long'))
+  @Column(DataType.TEXT("long"))
   description?: string;
 
   @Column({ type: DataType.DATEONLY, allowNull: false })
@@ -23,7 +26,7 @@ import { Review } from './Review';
 
   @Column({ type: DataType.INTEGER, allowNull: false })
   totalSeats!: number;
-  
+
   @Column(DataType.STRING) image?: string;
 
   @HasMany(() => Booking)
@@ -35,4 +38,3 @@ import { Review } from './Review';
   @HasMany(() => Review)
   reviews!: Review[];
 }
- 

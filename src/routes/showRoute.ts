@@ -9,10 +9,10 @@ const router = express.Router();
 router.get("/", asyncHandler(showController.getAllShows));
 router.get("/:id", asyncHandler(showController.getSingleShow));
 
-router.post("/",isUserLoggedIn,accessTo(Role.Admin),upload.single("image"),(showController.createShow)
+router.post("/",isUserLoggedIn,accessTo(Role.Admin),upload.single("showimage"),(showController.createShow)
 );
 
-router.put( "/:id",isUserLoggedIn,accessTo(Role.Admin),upload.single("image"),asyncHandler(showController.updateShow)
+router.put( "/:id",isUserLoggedIn,accessTo(Role.Admin),upload.single("showimage"),asyncHandler(showController.updateShow)
 );
 
 router.delete("/:id",isUserLoggedIn,accessTo(Role.Admin),asyncHandler(showController.deleteShow)

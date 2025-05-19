@@ -118,21 +118,27 @@ class ShowController {
     }
   }
 
-  async getSingleShow(req: Request, res: Response): Promise<void> {
-    try {
-      const { id } = req.params;
-      const show = await Show.findByPk(id);
+async getSingleShow(req: Request, res: Response): Promise<void> {
+  try {
+    const id = Number(req.params.id);  // Convert id to a number
 
-      if (!show) {
-        sendResponse(res, 404, "Show not found");
-        return;
-      }
-
-      sendResponse(res, 200, "Show retrieved successfully", show);
-    } catch (error: any) {
-      sendResponse(res, 500, "Error fetching show", error.message);
+    if (isNaN(id)) {
+      sendResponse(res, 400, "Invalid show ID");
+      return;
     }
+
+    const show = await Show.findByPk(id);
+
+    if (!show) {
+      sendResponse(res, 404, "Show not found");
+      return;
+    }
+
+    sendResponse(res, 200, "Show retrieved successfully", show);
+  } catch (error: any) {
+    sendResponse(res, 500, "Error fetching show", error.message);
   }
+}
 
   async updateShow(req: MulterRequest, res: Response): Promise<void> {
     try {

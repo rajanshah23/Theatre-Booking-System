@@ -2,6 +2,7 @@ import express from "express";
 import userRoute from "./routes/userRoute";
 import dotenv from "dotenv";
 import showRoute from "./routes/showRoute";
+import seatRoute from "./routes/seatRoute"
  
 dotenv.config();
 
@@ -19,6 +20,8 @@ app.get("/", (req, res) => {
 });
  
 app.use("/api/auth", userRoute);
+app.use("/api/shows", seatRoute);
 app.use("/api/shows", showRoute);
-
+ 
+ 
 export default app;
