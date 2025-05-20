@@ -1,6 +1,13 @@
-import { Table, Column, Model, DataType, ForeignKey, BelongsTo } from 'sequelize-typescript';
-import { Booking } from './Booking';
-import { Show } from './Show';
+import {
+  Table,
+  Column,
+  Model,
+  DataType,
+  ForeignKey,
+  BelongsTo,
+} from "sequelize-typescript";
+import { Booking } from "./Booking";
+import { Show } from "./Show";
 
 @Table
 export class Seat extends Model {
@@ -11,11 +18,11 @@ export class Seat extends Model {
   isBooked!: boolean;
 
   @ForeignKey(() => Booking)
-  @Column
-  bookingId?: number;
+  @Column({ type: DataType.INTEGER, allowNull: true })
+  bookingId!: number | null;
 
   @BelongsTo(() => Booking)
-  booking?: Booking;
+  booking!: Booking;
 
   @ForeignKey(() => Show)
   @Column
