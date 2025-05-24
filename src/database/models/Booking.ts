@@ -14,7 +14,12 @@ export class Booking extends Model {
  
 @Column({ type: DataType.ENUM('pending', 'booked', 'cancelled'), defaultValue: 'booked' })
 status!: 'pending' | 'booked' | 'cancelled';
-
+@Column({
+    type: DataType.STRING,
+    allowNull: true,
+    comment: 'Khalti payment reference ID',
+  })
+  pidx?: string;
   @ForeignKey(() => User)
   @Column
   userId!: number;
@@ -34,4 +39,4 @@ status!: 'pending' | 'booked' | 'cancelled';
 
   @HasOne(() => Payment)
   payment!: Payment;
-}
+}  

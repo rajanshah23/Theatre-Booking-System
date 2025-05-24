@@ -17,4 +17,15 @@ export const sequelize = new Sequelize({
   username: process.env.DB_USER,
   password: process.env.DB_PASS,
   models: [User, Show, Booking, Seat, Payment, Review],
+  dialectOptions: {
+    ssl: {
+      require: true,
+      rejectUnauthorized: false, // Required for Supabase
+    },
+  },
+  logging: false, 
 });
+sequelize.authenticate()
+  .then(() => console.log('Database connected'))
+  .catch(err => console.error(' Database connection error:', err));
+
