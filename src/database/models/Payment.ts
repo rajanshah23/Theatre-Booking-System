@@ -9,8 +9,8 @@ import {
 import { Booking } from "./Booking";
 
 @Table({
-  tableName: "payment",
-  modelName: "payment",
+  tableName: "Payment",  // plural
+  modelName: "Payment",    // PascalCase model name
   timestamps: true,
 })
 export class Payment extends Model {
@@ -27,7 +27,7 @@ export class Payment extends Model {
   status!: "successful" | "failed" | "pending";
 
   @ForeignKey(() => Booking)
-  @Column
+  @Column({ allowNull: false })
   bookingId!: number;
 
   @BelongsTo(() => Booking)

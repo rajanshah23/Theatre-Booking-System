@@ -4,7 +4,7 @@ import dotenv from "dotenv";
 import showRoute from "./routes/showRoute";
 import seatRoute from "./routes/seatRoute";
 import bookingRoutes from "./routes/bookingRoute";
-
+import reviewRoute from "./routes/reviewRoute";
 dotenv.config();
 require("./database/connection");
 
@@ -23,5 +23,6 @@ app.use("/api/auth", userRoute);
 app.use("/api/shows", showRoute);
 app.use("/api/shows", seatRoute);
 app.use("/api/booking", bookingRoutes);
+app.use("/api/reviews", reviewRoute);
 
 export default app;

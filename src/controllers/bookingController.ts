@@ -36,9 +36,7 @@ class BookingController {
 
       if (!Array.isArray(seatIds) || seatIds.length === 0) {
         await transaction.rollback();
-        return res
-          .status(400)
-          .json({ error: "seatIds must be a non-empty array" });
+        return res.status(400).json({ error: "seatIds must be a non-empty array" });
       }
 
       const seats = await Seat.findAll({
@@ -52,9 +50,7 @@ class BookingController {
 
       if (seats.length !== seatIds.length) {
         await transaction.rollback();
-        return res
-          .status(409)
-          .json({ error: "Some seats are already booked or invalid" });
+        return res.status(409).json({ error: "Some seats are already booked or invalid" });
       }
 
       const booking = await Booking.create(
@@ -77,6 +73,7 @@ class BookingController {
           purchase_order_id: booking.id,
           purchase_order_name: `order_${booking.id}`,
         };
+
         const response = await axios.post(
           "https://a.khalti.com/api/v2/epayment/initiate/",
           data,
@@ -88,6 +85,7 @@ class BookingController {
         );
 
         await booking.update({ pidx: response.data.pidx });
+
         return res.status(200).json({
           message: "Booking created and payment initiated",
           booking,
@@ -95,15 +93,12 @@ class BookingController {
           pidx: response.data.pidx,
         });
       }
-      return res
-        .status(201)
-        .json({ message: "Booking created successfully", booking });
+
+      return res.status(201).json({ message: "Booking created successfully", booking });
     } catch (error) {
       await transaction.rollback();
       console.error("Booking failed:", error);
-      return res
-        .status(500)
-        .json({ error: "Booking failed", details: (error as Error).message });
+      return res.status(500).json({ error: "Booking failed", details: (error as Error).message });
     }
   };
 
@@ -134,47 +129,43 @@ class BookingController {
         });
 
         if (!booking) {
-          return res
-            .status(404)
-            .json({ message: "Booking not found for this pidx" });
+          return res.status(404).json({ message: "Booking not found for this pidx" });
         }
 
         const transaction: Transaction = await Booking.sequelize!.transaction();
 
+        const seatIds = booking.seats?.map((seat) => seat.id) || [];
+
+        if (seatIds.length === 0) {
+          await transaction.rollback();
+          return res.status(400).json({ message: "No seats associated with booking" });
+        }
+
         const seats = await Seat.findAll({
           where: {
-            id: booking.seats.map((seat) => seat.id),
+            id: seatIds,
             isBooked: false,
           },
           transaction,
         });
 
-        if (seats.length !== booking.seats.length) {
+        if (seats.length !== seatIds.length) {
           await transaction.rollback();
-          return res
-            .status(409)
-            .json({ message: "Some seats already booked by others" });
+          return res.status(409).json({ message: "Some seats already booked by others" });
         }
 
         await Promise.all(
           seats.map((seat) =>
-            seat.update(
-              { isBooked: true, bookingId: booking.id },
-              { transaction }
-            )
+            seat.update({ isBooked: true, bookingId: booking.id }, { transaction })
           )
         );
 
         await booking.update({ status: "booked" }, { transaction });
         await transaction.commit();
 
-        return res
-          .status(200)
-          .json({ message: "Payment verified and booking confirmed!" });
+        return res.status(200).json({ message: "Payment verified and booking confirmed!" });
       } else {
-        return res
-          .status(400)
-          .json({ message: "Payment not completed or failed" });
+        return res.status(400).json({ message: "Payment not completed or failed" });
       }
     } catch (error) {
       console.error("Verification error:", error);
@@ -199,9 +190,7 @@ class BookingController {
 
       if (booking.status !== "pending") {
         await transaction.rollback();
-        return res
-          .status(400)
-          .json({ error: "Only pending bookings can be confirmed" });
+        return res.status(400).json({ error: "Only pending bookings can be confirmed" });
       }
 
       const seats = await Seat.findAll({
@@ -214,22 +203,16 @@ class BookingController {
 
       if (seats.length !== booking.seats.length) {
         await transaction.rollback();
-        return res
-          .status(409)
-          .json({ error: "Some seats have already been booked by others" });
+        return res.status(409).json({ error: "Some seats have already been booked" });
       }
 
       await Promise.all(
         seats.map((seat) =>
-          seat.update(
-            { isBooked: true, bookingId: booking.id },
-            { transaction }
-          )
+          seat.update({ isBooked: true, bookingId: booking.id }, { transaction })
         )
       );
 
       await booking.update({ status: "booked" }, { transaction });
-
       await transaction.commit();
 
       return res.status(200).json({ message: "Booking confirmed", booking });
@@ -267,12 +250,9 @@ class BookingController {
       );
 
       await booking.update({ status: "cancelled" }, { transaction });
-
       await transaction.commit();
 
-      return res
-        .status(200)
-        .json({ message: "Booking cancelled successfully" });
+      return res.status(200).json({ message: "Booking cancelled successfully" });
     } catch (error) {
       await transaction.rollback();
       console.error("Cancellation failed:", error);
