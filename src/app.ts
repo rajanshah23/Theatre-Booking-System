@@ -6,7 +6,7 @@ import showRoute from './routes/showRoute';
 import seatRoute from './routes/seatRoute';
 import bookingRoutes from './routes/bookingRoute';
 import reviewRoute from './routes/reviewRoute';
-
+import path from 'path';
 dotenv.config();
 require('./database/connection');
 
@@ -18,6 +18,8 @@ app.use(express.json());
 app.get('/', (req, res) => {
   res.status(200).json({ status: 'success', message: 'Rest API is working' });
 });
+// In main server file (e.g., index.ts)
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.use('/api/auth', userRoute);
 app.use('/api/shows', showRoute);
