@@ -61,7 +61,7 @@ export const isUserLoggedIn = asyncHandler(
     }
 
     req.user = {
-      id: user.id,
+      id: user.id.toString(),
       role: user.role as Role,
     };
 

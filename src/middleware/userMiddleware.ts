@@ -1,30 +1,17 @@
 import { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import { envConfig } from "../config/config";
-import UserController from "../controllers/userController";
 import { User } from "../database/models/User";
+import { Role } from "./authMiddleware"; // Make sure this is correct or import from where your Role enum is defined
 
-export enum Role {
-  Admin = "admin",
-  Customer = "customer",
-}
-
-interface IExtendedRequest extends Request {
-  user?: {
-    username: string;
-    email: string;
-    role: string;
-    password: string;
-    id: number;
-  };
-}
 class UserMiddleware {
   async isUserLoggedIn(
-    req: IExtendedRequest,
+    req: Request,
     res: Response,
     next: NextFunction
   ): Promise<void> {
-    const token = req.headers.authorization;
+    const token = req.headers.authorization?.split(" ")[1];
+
     if (!token) {
       res.status(403).json({
         message: "Token must be provided",
@@ -38,7 +25,7 @@ class UserMiddleware {
       async (err, result: any) => {
         if (err) {
           res.status(403).json({
-            message: "Invalid token !!!",
+            message: "Invalid token!",
           });
         } else {
           const userData = await User.findByPk(result.userId);
@@ -48,27 +35,29 @@ class UserMiddleware {
             });
             return;
           }
+
           req.user = {
-            id: userData.id!,
-            username: userData.username,
-            email: userData.email,
-            role: userData.role,
-            password: userData.password,
+            id: userData.id.toString(), // ensure it's a string
+            role: userData.role as Role, // cast to Role enum
           };
+
           next();
         }
       }
     );
   }
+
   accessTo(...roles: Role[]) {
-    return (req: IExtendedRequest, res: Response, next: NextFunction) => {
-      let userRole = req.user?.role as Role;
-      if (!roles.includes(userRole)) {
+    return (req: Request, res: Response, next: NextFunction) => {
+      const userRole = req.user?.role;
+
+      if (!userRole || !roles.includes(userRole)) {
         res.status(403).json({
-          message: "You dont have permission haiii!!",
+          message: "You don't have permission to access this resource!",
         });
         return;
       }
+
       next();
     };
   }

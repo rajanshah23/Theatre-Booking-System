@@ -12,7 +12,7 @@ require('./database/connection');
 
 const app = express();
 
-app.use(cors({ origin: 'http://localhost:5173' }));
+app.use(cors({ origin: 'http://localhost:5173', credentials: true  }));
 app.use(express.json());
 
 app.get('/', (req, res) => {
@@ -26,5 +26,5 @@ app.use('/api/shows', showRoute);
 app.use('/api/shows', seatRoute);
 app.use('/api/booking', bookingRoutes);
 app.use('/api/reviews', reviewRoute);
-
+app.use("/api/users", userRoute);
 export default app;

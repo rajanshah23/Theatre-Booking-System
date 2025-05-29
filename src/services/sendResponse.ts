@@ -1,10 +1,11 @@
-import { Response } from "express"
+import { Response } from "express";
 
-const sendResponse =(res:Response,statusNumber:number,message:string,data:any=[])=>{
-res.status(statusNumber).json({
+const sendResponse = (res: Response, statusNumber: number, message: string, data: any = null) => {
+  res.status(statusNumber).json({
     message,
-    data:data.length>0?data:null
-})
- 
+    data: data === undefined || data === null ? null : data
+  });
 }
-export default sendResponse
+
+
+export default sendResponse;
