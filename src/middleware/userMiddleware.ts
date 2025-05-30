@@ -37,8 +37,8 @@ class UserMiddleware {
           }
 
           req.user = {
-            id: userData.id.toString(), // ensure it's a string
-            role: userData.role as Role, // cast to Role enum
+            id: userData.id.toString(),  
+            role: userData.role as Role,  
           };
 
           next();

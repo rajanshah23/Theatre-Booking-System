@@ -9,7 +9,7 @@ const router = express.Router();
 router.get('/:showId/seats/available', asyncHandler(bookingController.getAvailableSeats.bind(bookingController)));
 
 // Create booking & initiate payment
-router.post("/:showId/bookings", isUserLoggedIn, asyncHandler(bookingController.createBooking.bind(bookingController)));
+router.post("/:showId/bookings", isUserLoggedIn, asyncHandler(bookingController.createBooking.bind(bookingController)))
 
 // Confirm booking manually  
 router.patch("/bookings/:bookingId/confirm", isUserLoggedIn, asyncHandler(bookingController.confirmBooking.bind(bookingController)));

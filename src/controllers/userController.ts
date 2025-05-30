@@ -32,7 +32,7 @@ class UserController {
         username,
         email,
         password: hashedPassword,
-        role: "user",
+        role: "customer",
       });
 
       return sendResponse(res, 201, "User registered successfully", {

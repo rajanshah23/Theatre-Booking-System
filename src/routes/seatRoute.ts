@@ -14,3 +14,4 @@ router.post("/:showId/seats/book", isUserLoggedIn, asyncHandler(bookSeat));
 router.post("/:showId/seats/seed", isUserLoggedIn, accessTo(Role.Admin), asyncHandler(seedSeatsForShow));
 
 export default router;
+

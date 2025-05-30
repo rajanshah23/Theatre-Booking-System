@@ -31,7 +31,7 @@ export const isUserLoggedIn = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
     let token: string | undefined;
 
-    if (req.headers.authorization?.startsWith("Bearer")) {
+    if (req.headers.authorization?.startsWith("Bearer ")) {
       token = req.headers.authorization.split(" ")[1];
     } else if (req.cookies?.token) {
       token = req.cookies.token;
@@ -40,24 +40,29 @@ export const isUserLoggedIn = asyncHandler(
     }
 
     if (!token) {
-      return res
-        .status(401)
-        .json({
-          success: false,
-          message: "Not authorized to access this route",
-        });
+      return res.status(401).json({
+        success: false,
+        message: "Not authorized to access this route, token missing",
+      });
     }
 
-    const decoded = jwt.verify(
-      token,
-      process.env.JWT_SECRET_KEY!
-    ) as JwtPayload;  
+    let decoded: JwtPayload;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET_KEY!) as JwtPayload;
+    } catch (err) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid token",
+      });
+    }
+
     const user = await User.findByPk(decoded.userId);
 
     if (!user) {
-      return res
-        .status(401)
-        .json({ success: false, message: "User not found" });
+      return res.status(401).json({
+        success: false,
+        message: "User not found",
+      });
     }
 
     req.user = {
