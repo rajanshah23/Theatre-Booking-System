@@ -1,10 +1,8 @@
 import { Request, Response } from "express";
 import { Seat } from "../database/models/Seat";
 import { Booking } from "../database/models/Booking";
-import { Show } from "../database/models/Show";   
+import { Show } from "../database/models/Show";
 
-
- 
 export const getAvailableSeats = async (req: Request, res: Response) => {
   try {
     const userId = req.user?.id;
@@ -13,7 +11,7 @@ export const getAvailableSeats = async (req: Request, res: Response) => {
     const { showId } = req.params;
 
     const seats = await Seat.findAll({
-      where: { showId, isBooked: false },
+      where: { showId: Number(showId), isBooked: false },
       order: [["seatNumber", "ASC"]],
     });
 
@@ -24,7 +22,6 @@ export const getAvailableSeats = async (req: Request, res: Response) => {
   }
 };
 
- 
 export const bookSeat = async (req: Request, res: Response) => {
   try {
     const userId = req.user?.id;
@@ -38,7 +35,7 @@ export const bookSeat = async (req: Request, res: Response) => {
     }
 
     const seat = await Seat.findOne({
-      where: { showId, seatNumber },
+      where: { showId: Number(showId), seatNumber },
     });
 
     if (!seat) {
@@ -54,7 +51,7 @@ export const bookSeat = async (req: Request, res: Response) => {
       showId: Number(showId),
       seatId: seat.id,
       status: "booked",
-        totalSeats: 1 
+      totalSeats: 1,
     });
 
     seat.isBooked = true;
@@ -67,37 +64,38 @@ export const bookSeat = async (req: Request, res: Response) => {
     res.status(500).json({ error: "Booking failed" });
   }
 };
- 
+
 export const seedSeatsForShow = async (req: Request, res: Response) => {
   try {
     const { showId } = req.params;
 
-   
     const show = await Show.findByPk(showId);
     if (!show) {
       return res.status(404).json({ error: "Show not found" });
     }
 
-    
     const existingSeats = await Seat.count({ where: { showId } });
     if (existingSeats > 0) {
       return res.status(400).json({ error: "Seats already seeded for this show" });
     }
 
-    const totalSeats = show.totalSeats;
+    const seatRows = ["A", "B", "C", "D", "E", "F", "G", "H", "I"];
+    const seatsPerRow = 10;
     const seatsToCreate = [];
-    for (let i = 1; i <= totalSeats; i++) {
-      seatsToCreate.push({
-        showId: show.id,
-        seatNumber: i.toString(),
-        isBooked: false,
-        bookingId: null,
-      });
+
+    for (const row of seatRows) {
+      for (let i = 1; i <= seatsPerRow; i++) {
+        seatsToCreate.push({
+          showId: Number(showId),
+          seatNumber: `${row}${i}`,  
+          bookingId: null,
+        });
+      }
     }
 
     await Seat.bulkCreate(seatsToCreate);
 
-    res.status(201).json({ message: `Seeded ${totalSeats} seats for show ${show.title}` });
+    res.status(201).json({ message: `Seeded ${seatRows.length * seatsPerRow} seats for show ${show.title}` });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Failed to seed seats" });

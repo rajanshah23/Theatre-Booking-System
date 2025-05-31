@@ -120,7 +120,7 @@ class ShowController {
 
 async getSingleShow(req: Request, res: Response): Promise<void> {
   try {
-    const id = Number(req.params.id);  // Convert id to a number
+    const id = Number(req.params.id);   
 
     if (isNaN(id)) {
       sendResponse(res, 400, "Invalid show ID");

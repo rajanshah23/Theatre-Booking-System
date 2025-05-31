@@ -10,4 +10,6 @@ router.post("/", isUserLoggedIn, asyncHandler(reviewController.createReview));
 // Get all reviews for a particular show 
 router.get("/show/:showId", asyncHandler(reviewController.getReviewsByShow));
 
+router.get("/user", isUserLoggedIn, asyncHandler(reviewController.getReviewsByUser));
 export default router;
+ 

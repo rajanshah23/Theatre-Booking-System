@@ -24,7 +24,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/api/auth', userRoute);
 app.use('/api/shows', showRoute);
 app.use('/api/shows', seatRoute);
-app.use('/api/booking', bookingRoutes);
+app.use('/api/shows', bookingRoutes);
 app.use('/api/reviews', reviewRoute);
 app.use("/api/users", userRoute);
 export default app;

@@ -10,17 +10,29 @@ const seedSeatsForAllShows = async () => {
       return;
     }
 
+    const seatRows = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");  
+    const seatsPerRow = 10;
+
     for (const show of shows) {
       console.log(`Seeding seats for show: ${show.title} (ID: ${show.id})`);
 
-      // Delete existing seats for this show
+    
       await Seat.destroy({ where: { showId: show.id } });
 
       const seats = [];
-      for (let i = 1; i <= show.totalSeats; i++) {
+
+      for (let i = 0; i < show.totalSeats; i++) {
+        const rowIndex = Math.floor(i / seatsPerRow);
+        const seatNumberInRow = (i % seatsPerRow) + 1;
+
+     
+        if (rowIndex >= seatRows.length) {
+          throw new Error(`Not enough rows to seed all seats for show ${show.title}`);
+        }
+
         seats.push({
           showId: show.id,
-          seatNumber: i.toString(),
+          seatNumber: `${seatRows[rowIndex]}${seatNumberInRow}`,
           isBooked: false,
           bookingId: null,
         });
