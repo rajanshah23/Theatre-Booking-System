@@ -2,7 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import { envConfig } from "../config/config";
 import { User } from "../database/models/User";
-import { Role } from "./authMiddleware"; // Make sure this is correct or import from where your Role enum is defined
+import { Role } from "./authMiddleware";  
 
 class UserMiddleware {
   async isUserLoggedIn(

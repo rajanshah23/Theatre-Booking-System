@@ -11,14 +11,19 @@ export const getAvailableSeats = async (req: Request, res: Response) => {
     const { showId } = req.params;
 
     const seats = await Seat.findAll({
-      where: { showId: Number(showId), isBooked: false },
+      where: { showId: Number(showId) },
       order: [["seatNumber", "ASC"]],
     });
 
-    res.status(200).json(seats);
+    const seatsWithStatus = seats.map((seat) => ({
+      seatNumber: seat.seatNumber,
+      status: seat.isBooked ? "booked" : "available",
+    }));
+
+    res.status(200).json({ data: seatsWithStatus });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Failed to fetch seats" });
+    console.error("Error fetching seat availability:", error);
+    res.status(500).json({ error: "Failed to fetch seat availability" });
   }
 };
 
@@ -28,37 +33,39 @@ export const bookSeat = async (req: Request, res: Response) => {
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
     const { showId } = req.params;
-    const { seatNumber } = req.body;
+    const { seatNumbers } = req.body; // Expecting an array like ["C5", "C6"]
 
-    if (!seatNumber) {
-      return res.status(400).json({ error: "seatNumber is required" });
+    if (!Array.isArray(seatNumbers) || seatNumbers.length === 0) {
+      return res.status(400).json({ error: "seatNumbers (array) is required" });
     }
 
-    const seat = await Seat.findOne({
-      where: { showId: Number(showId), seatNumber },
+    const seats = await Seat.findAll({
+      where: {
+        showId: Number(showId),
+        seatNumber: seatNumbers,
+        isBooked: false,
+      },
     });
 
-    if (!seat) {
-      return res.status(404).json({ error: "Seat not found" });
-    }
-
-    if (seat.isBooked) {
-      return res.status(400).json({ error: "Seat already booked" });
+    if (seats.length !== seatNumbers.length) {
+      return res.status(400).json({ error: "One or more seats are already booked or invalid" });
     }
 
     const booking = await Booking.create({
       userId,
       showId: Number(showId),
-      seatId: seat.id,
+      totalSeats: seatNumbers.length,
       status: "booked",
-      totalSeats: 1,
     });
 
-    seat.isBooked = true;
-    seat.bookingId = booking.id;
-    await seat.save();
+    // Mark seats as booked
+    for (const seat of seats) {
+      seat.isBooked = true;
+      seat.bookingId = booking.id;
+      await seat.save();
+    }
 
-    res.status(200).json({ message: "Seat booked successfully", booking });
+    res.status(200).json({ message: "Seats booked successfully", booking });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Booking failed" });
