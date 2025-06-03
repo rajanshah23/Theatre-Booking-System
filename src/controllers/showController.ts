@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { Show } from "../database/models/Show";
 import sendResponse from "../services/sendResponse";
-
+import { Op } from "sequelize";  
 interface MulterRequest extends Request {
   file?: Express.Multer.File;
 }
@@ -12,6 +12,7 @@ interface ShowRequestBody {
   showDate?: string;
   showTime?: string;
   showTotalSeats?: number;
+  price?: number;  
 }
 
 class ShowController {
@@ -34,6 +35,7 @@ class ShowController {
           date: "2025-05-15",
           time: "18:00",
           totalSeats: 100,
+          price: 500,  
           image: "https://i.gadgets360cdn.com/products/large/Final-Destination-Bloodlines-2-1422x800-1743500570068.jpg?downsize=*:420 ",
         },
         {
@@ -42,6 +44,7 @@ class ShowController {
           date: "2025-06-02",
           time: "20:00",
           totalSeats: 80,
+          price: 500,  
           image: "https://imgs.search.brave.com/zmakM_c-sciQbi825kd73kaAhZw4ri_igBBwvRxwAtM/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9tLm1l/ZGlhLWFtYXpvbi5j/b20vaW1hZ2VzL00v/TVY1Qk16STJOalpp/TkdNdE5tWTVNQzAw/WTJKbExXRm1ZMlF0/TkRVMk5tTTRPR05s/WW1GaFhrRXlYa0Zx/Y0djQC5qcGc  ",
         },
         {
@@ -50,6 +53,7 @@ class ShowController {
           date: "2025-06-03",
           time: "17:30",
           totalSeats: 120,
+          price: 500,  
           image: "https://imgs.search.brave.com/AFZuopO2WY5iQn61c2LRDKyiSjR1bWFMvZYnLoTjQTY/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9kMzJx/eXM5YTZ3bTluby5j/bG91ZGZyb250Lm5l/dC9pbWFnZXMvbW92/aWVzL3Bvc3Rlci9i/ZS8xMTAyZDUzYjFh/ODAwMmJiZTcyMTAy/MzFjMDZkNWM2ZV8z/MDB4NDQyLmpwZz90/PTE3NDY1Nzc3MDE",
         },
       ];
@@ -63,22 +67,35 @@ class ShowController {
 
   async createShow(req: MulterRequest, res: Response): Promise<void> {
     try {
-      const { showTitle, showDescription, showDate, showTime, showTotalSeats } = req.body;
+    
+      const { showTitle, showDescription, showDate, showTime, showTotalSeats, price } = req.body;
 
       const filename = req.file
         ? req.file.filename
         : "https://weimaracademy.org/wp-content/uploads/2021/08/dummy-user.png";
 
-      if (!showTitle || !showDate || !showTime || !showTotalSeats) {
+    
+      if (!showTitle || !showDate || !showTime || !showTotalSeats || !price) {
         sendResponse(
           res,
           400,
-          "Missing required fields: showTitle, showDate, showTime, showTotalSeats"
+          "Missing required fields: showTitle, showDate, showTime, showTotalSeats, price"
         );
         return;
       }
 
  
+      if (isNaN(Number(price))) {
+        sendResponse(res, 400, "Price must be a valid number");
+        return;
+      }
+
+      if (Number(price) <= 0) {
+        sendResponse(res, 400, "Price must be greater than 0");
+        return;
+      }
+
+    
       const overlappingShow = await Show.findOne({
         where: {
           date: showDate,
@@ -90,13 +107,14 @@ class ShowController {
         sendResponse(res, 409, "A show already exists at this date and time");
         return;
       }
-
+ 
       const show = await Show.create({
         title: showTitle,
         description: showDescription || null,
         date: showDate,
         time: showTime,
         totalSeats: showTotalSeats,
+        price: Number(price), // Add price
         image: filename,
       });
 
@@ -118,32 +136,33 @@ class ShowController {
     }
   }
 
-async getSingleShow(req: Request, res: Response): Promise<void> {
-  try {
-    const id = Number(req.params.id);   
+  async getSingleShow(req: Request, res: Response): Promise<void> {
+    try {
+      const id = Number(req.params.id);   
 
-    if (isNaN(id)) {
-      sendResponse(res, 400, "Invalid show ID");
-      return;
+      if (isNaN(id)) {
+        sendResponse(res, 400, "Invalid show ID");
+        return;
+      }
+
+      const show = await Show.findByPk(id);
+
+      if (!show) {
+        sendResponse(res, 404, "Show not found");
+        return;
+      }
+
+      sendResponse(res, 200, "Show retrieved successfully", show);
+    } catch (error: any) {
+      sendResponse(res, 500, "Error fetching show", error.message);
     }
-
-    const show = await Show.findByPk(id);
-
-    if (!show) {
-      sendResponse(res, 404, "Show not found");
-      return;
-    }
-
-    sendResponse(res, 200, "Show retrieved successfully", show);
-  } catch (error: any) {
-    sendResponse(res, 500, "Error fetching show", error.message);
   }
-}
 
   async updateShow(req: MulterRequest, res: Response): Promise<void> {
     try {
       const { id } = req.params;
-      const { showTitle, showDescription, showDate, showTime, showTotalSeats } = req.body;
+    
+      const { showTitle, showDescription, showDate, showTime, showTotalSeats, price } = req.body;
       const filename = req.file?.filename;
 
       const show = await Show.findByPk(id);
@@ -152,6 +171,18 @@ async getSingleShow(req: Request, res: Response): Promise<void> {
         return;
       }
  
+      if (price !== undefined) {
+        if (isNaN(Number(price))) {
+          sendResponse(res, 400, "Price must be a valid number");
+          return;
+        }
+        if (Number(price) <= 0) {
+          sendResponse(res, 400, "Price must be greater than 0");
+          return;
+        }
+      }
+
+       
       if (showDate || showTime) {
         const targetDate = showDate || show.date;
         const targetTime = showTime || show.time;
@@ -160,7 +191,7 @@ async getSingleShow(req: Request, res: Response): Promise<void> {
           where: {
             date: targetDate,
             time: targetTime,
-
+            id: { [Op.ne]: id }  
           },
         });
 
@@ -170,6 +201,7 @@ async getSingleShow(req: Request, res: Response): Promise<void> {
         }
       }
 
+  
       await show.update({
         title: showTitle || show.title,
         description: showDescription || show.description,
@@ -177,6 +209,7 @@ async getSingleShow(req: Request, res: Response): Promise<void> {
         time: showTime || show.time,
         totalSeats: showTotalSeats || show.totalSeats,
         image: filename || show.image,
+        price: price !== undefined ? Number(price) : show.price,  
       });
 
       sendResponse(res, 200, "Show updated successfully", show);

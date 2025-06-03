@@ -5,7 +5,7 @@ import { asyncHandler, isUserLoggedIn, accessTo, Role } from "../middleware/auth
 const router = express.Router();
 
 // show ko lagi available seat get garni
-router.get("/:showId/seats-availability", isUserLoggedIn, asyncHandler(getAvailableSeats));
+router.get("/:showId/seats/availability", isUserLoggedIn, asyncHandler(getAvailableSeats));
 
 //  seatbook garni show ko lagi
 router.post("/:showId/seats/book", isUserLoggedIn, asyncHandler(bookSeat));

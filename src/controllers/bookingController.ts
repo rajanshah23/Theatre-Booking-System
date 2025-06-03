@@ -4,7 +4,7 @@ import { Seat } from "../database/models/Seat";
 import { Show } from "../database/models/Show";
 import { Transaction } from "sequelize";
 import axios from "axios";
-
+import { Payment } from "../database/models/Payment";
 class BookingController {
   public getAvailableSeats = async (req: Request, res: Response) => {
     try {
@@ -29,15 +29,33 @@ class BookingController {
     const transaction: Transaction = await Booking.sequelize!.transaction();
     try {
       const { showId } = req.params;
-      const { seatIds, totalAmount, paymentMethod } = req.body;
+      const { seatIds: rawSeatIds, paymentMethod, showTime, seatNumbers } = req.body;
+      const seatIds = rawSeatIds.map(Number);
       const userId = req.user?.id;
 
       if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
       if (!Array.isArray(seatIds) || seatIds.length === 0) {
-        await transaction.rollback();
         return res.status(400).json({ error: "seatIds must be a non-empty array" });
       }
+
+      const show = await Show.findByPk(showId, { 
+        attributes: ['id', 'price'],
+        transaction 
+      });
+      
+      if (!show) {
+        await transaction.rollback();
+        return res.status(404).json({ error: "Show not found" });
+      }
+
+      // Validate show price
+      if (!show.price || show.price <= 0) {
+        await transaction.rollback();
+        return res.status(400).json({ error: "Show has invalid price" });
+      }
+
+      const totalAmount = seatIds.length * show.price;
 
       const seats = await Seat.findAll({
         where: {
@@ -59,56 +77,100 @@ class BookingController {
           showId: Number(showId),
           totalSeats: seatIds.length,
           status: "pending",
+          showTime,
         },
         { transaction }
       );
 
+      await Promise.all(
+        seats.map(seat => 
+          seat.update({ isBooked: true, bookingId: booking.id }, { transaction }))
+      );
+
       await transaction.commit();
 
-      if (paymentMethod === "Khalti") {
-        const data = {
-          return_url: "http://localhost:5173/",
-          website_url: "http://localhost:5173/",
-          amount: totalAmount * 100,
-          purchase_order_id: booking.id,
-          purchase_order_name: `order_${booking.id}`,
-        };
+      if (paymentMethod.toUpperCase() === "KHALTI") {
+        try {
+          const data = {
+            return_url: `http://localhost:5173/payment-success?bookingId=${booking.id}`,
+            website_url: "http://localhost:5173/",
+            amount: totalAmount * 100,
+            purchase_order_id: booking.id,
+            purchase_order_name: `booking_${booking.id}`,
+          };
 
-        const response = await axios.post(
-          "https://a.khalti.com/api/v2/epayment/initiate/",
-          data,
-          {
-            headers: {
-              Authorization: "Key a2cede7e801a4fe7a057c80ba2f526e5",
-            },
-          }
-        );
+          const response = await axios.post(
+            "https://a.khalti.com/api/v2/epayment/initiate/",
+            data,
+            {
+              headers: {
+                Authorization: "Key a2cede7e801a4fe7a057c80ba2f526e5",
+              },
+            }
+          );
 
-        await booking.update({ pidx: response.data.pidx });
+          // Store pidx in booking
+          await booking.update({ pidx: response.data.pidx });
 
-        return res.status(200).json({
-          message: "Booking created and payment initiated",
-          booking,
-          paymentUrl: response.data.payment_url,
-          pidx: response.data.pidx,
-        });
+          return res.status(200).json({
+            message: "Booking created and payment initiated",
+            booking,
+            paymentUrl: response.data.payment_url,
+          });
+        } catch (khaltiError) {
+          console.error("Khalti payment initiation failed:", khaltiError);
+          
+          // Handle Khalti failure
+          await booking.update({ status: "failed" });
+          await Seat.update(
+            { isBooked: false, bookingId: null },
+            { where: { id: seatIds } }
+          );
+          
+          return res.status(500).json({
+            error: "Payment initiation failed",
+            details: (khaltiError as any).response?.data || (khaltiError as Error).message
+          });
+        }
       }
 
-      return res.status(201).json({ message: "Booking created successfully", booking });
+      // For non-Khalti payments, mark as confirmed immediately
+      await booking.update({ status: "confirmed" });
+      await Payment.create({
+        bookingId: booking.id,
+        amount: totalAmount,
+        paymentMethod: paymentMethod,
+        status: "completed",
+      });
+
+      return res.status(201).json({ 
+        message: "Booking created successfully", 
+        booking 
+      });
     } catch (error) {
       await transaction.rollback();
       console.error("Booking failed:", error);
-      return res.status(500).json({ error: "Booking failed", details: (error as Error).message });
+      return res.status(500).json({ 
+        error: "Booking failed", 
+        details: (error as Error).message 
+      });
     }
   };
 
-  public verifyPayment = async (req: Request, res: Response) => {
+
+
+
+
+public verifyPayment = async (req: Request, res: Response) => {
+    const transaction: Transaction = await Booking.sequelize!.transaction();
     try {
       const { pidx } = req.body;
+
       if (!pidx) {
         return res.status(400).json({ message: "Please provide pidx" });
       }
 
+      // Call Khalti API to verify payment status
       const response = await axios.post(
         "https://a.khalti.com/api/v2/epayment/lookup/",
         { pidx },
@@ -119,60 +181,52 @@ class BookingController {
         }
       );
 
-      const data = response.data;
-      console.log("Khalti lookup response:", data);
+      const khaltiResponse = response.data;
+      console.log("Khalti lookup response:", khaltiResponse);
 
-      if (data.status === "Completed") {
+      if (khaltiResponse.status === "Completed") {
+        // Find booking associated with the pidx
         const booking = await Booking.findOne({
           where: { pidx },
-          include: [Seat],
-        });
-
-        if (!booking) {
-          return res.status(404).json({ message: "Booking not found for this pidx" });
-        }
-
-        const transaction: Transaction = await Booking.sequelize!.transaction();
-
-        const seatIds = booking.seats?.map((seat) => seat.id) || [];
-
-        if (seatIds.length === 0) {
-          await transaction.rollback();
-          return res.status(400).json({ message: "No seats associated with booking" });
-        }
-
-        const seats = await Seat.findAll({
-          where: {
-            id: seatIds,
-            isBooked: false,
-          },
           transaction,
         });
 
-        if (seats.length !== seatIds.length) {
+        if (!booking) {
           await transaction.rollback();
-          return res.status(409).json({ message: "Some seats already booked by others" });
+          return res.status(404).json({ message: "Booking not found for this pidx" });
         }
 
-        await Promise.all(
-          seats.map((seat) =>
-            seat.update({ isBooked: true, bookingId: booking.id }, { transaction })
-          )
+        // Update booking status to confirmed
+        await booking.update({ status: "confirmed" }, { transaction });
+
+        // Create a payment record in the Payment table
+        await Payment.create(
+          {
+            bookingId: booking.id,
+            amount: khaltiResponse.amount / 100, // Convert from paisa to NPR
+            paymentMethod: "khalti",
+            transactionId: pidx,
+            status: "completed",
+          },
+          { transaction }
         );
 
-        await booking.update({ status: "booked" }, { transaction });
         await transaction.commit();
 
-        return res.status(200).json({ message: "Payment verified and booking confirmed!" });
+        return res.status(200).json({
+          message: "Payment verified and booking confirmed!",
+          booking,
+        });
       } else {
-        return res.status(400).json({ message: "Payment not completed or failed" });
+        await transaction.rollback();
+        return res.status(400).json({ message: "Payment not completed" });
       }
     } catch (error) {
+      await transaction.rollback();
       console.error("Verification error:", error);
       return res.status(500).json({ message: "Payment verification failed" });
     }
   };
-
   public confirmBooking = async (req: Request, res: Response) => {
     const transaction: Transaction = await Booking.sequelize!.transaction();
     try {
@@ -190,7 +244,16 @@ class BookingController {
 
       if (booking.status !== "pending") {
         await transaction.rollback();
-        return res.status(400).json({ error: "Only pending bookings can be confirmed" });
+        return res
+          .status(400)
+          .json({ error: "Only pending bookings can be confirmed" });
+      }
+
+      if (!booking.seats || booking.seats.length === 0) {
+        await transaction.rollback();
+        return res
+          .status(400)
+          .json({ error: "No seats associated with booking" });
       }
 
       const seats = await Seat.findAll({
@@ -203,12 +266,17 @@ class BookingController {
 
       if (seats.length !== booking.seats.length) {
         await transaction.rollback();
-        return res.status(409).json({ error: "Some seats have already been booked" });
+        return res
+          .status(409)
+          .json({ error: "Some seats have already been booked" });
       }
 
       await Promise.all(
         seats.map((seat) =>
-          seat.update({ isBooked: true, bookingId: booking.id }, { transaction })
+          seat.update(
+            { isBooked: true, bookingId: booking.id },
+            { transaction }
+          )
         )
       );
 
@@ -243,6 +311,13 @@ class BookingController {
         return res.status(400).json({ error: "Booking is already cancelled" });
       }
 
+      if (!booking.seats || booking.seats.length === 0) {
+        await transaction.rollback();
+        return res
+          .status(400)
+          .json({ error: "No seats associated with booking" });
+      }
+
       await Promise.all(
         booking.seats.map((seat) =>
           seat.update({ isBooked: false, bookingId: null }, { transaction })
@@ -252,7 +327,9 @@ class BookingController {
       await booking.update({ status: "cancelled" }, { transaction });
       await transaction.commit();
 
-      return res.status(200).json({ message: "Booking cancelled successfully" });
+      return res
+        .status(200)
+        .json({ message: "Booking cancelled successfully" });
     } catch (error) {
       await transaction.rollback();
       console.error("Cancellation failed:", error);

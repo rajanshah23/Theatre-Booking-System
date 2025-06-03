@@ -24,6 +24,14 @@ export class Show extends Model {
   @Column({ type: DataType.TIME, allowNull: false })
   time!: string;
 
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+    defaultValue: 300,  
+  })
+  price!: number;
+
+
   @Column({ type: DataType.INTEGER, allowNull: false })
   totalSeats!: number;
 

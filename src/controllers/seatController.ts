@@ -15,10 +15,12 @@ export const getAvailableSeats = async (req: Request, res: Response) => {
       order: [["seatNumber", "ASC"]],
     });
 
-    const seatsWithStatus = seats.map((seat) => ({
-      seatNumber: seat.seatNumber,
-      status: seat.isBooked ? "booked" : "available",
-    }));
+const seatsWithStatus = seats.map((seat) => ({
+  id: seat.id,
+  seatNumber: seat.seatNumber,
+  status: seat.isBooked ? "booked" : "available",
+}));
+
 
     res.status(200).json({ data: seatsWithStatus });
   } catch (error) {
@@ -33,32 +35,33 @@ export const bookSeat = async (req: Request, res: Response) => {
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
     const { showId } = req.params;
-    const { seatNumbers } = req.body; // Expecting an array like ["C5", "C6"]
+    const { seatIds } = req.body; 
 
-    if (!Array.isArray(seatNumbers) || seatNumbers.length === 0) {
-      return res.status(400).json({ error: "seatNumbers (array) is required" });
+    if (!Array.isArray(seatIds) || seatIds.length === 0) {
+      return res.status(400).json({ error: "seatIds (array) is required" });
     }
 
     const seats = await Seat.findAll({
       where: {
+        id: seatIds,
         showId: Number(showId),
-        seatNumber: seatNumbers,
         isBooked: false,
       },
     });
 
-    if (seats.length !== seatNumbers.length) {
-      return res.status(400).json({ error: "One or more seats are already booked or invalid" });
+    if (seats.length !== seatIds.length) {
+      return res
+        .status(400)
+        .json({ error: "Some seats are already booked or invalid" });
     }
 
     const booking = await Booking.create({
       userId,
       showId: Number(showId),
-      totalSeats: seatNumbers.length,
+      totalSeats: seatIds.length,
       status: "booked",
     });
 
-    // Mark seats as booked
     for (const seat of seats) {
       seat.isBooked = true;
       seat.bookingId = booking.id;
@@ -71,6 +74,7 @@ export const bookSeat = async (req: Request, res: Response) => {
     res.status(500).json({ error: "Booking failed" });
   }
 };
+
 
 export const seedSeatsForShow = async (req: Request, res: Response) => {
   try {
