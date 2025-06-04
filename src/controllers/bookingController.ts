@@ -5,6 +5,9 @@ import { Show } from "../database/models/Show";
 import { Transaction } from "sequelize";
 import axios from "axios";
 import { Payment } from "../database/models/Payment";
+import { generateTicketPDF } from "../services/ticketGenerator";
+import { sendTicketEmail } from "../services/emailService";
+import { User } from "../database/models/User";
 class BookingController {
   public getAvailableSeats = async (req: Request, res: Response) => {
     try {
@@ -29,27 +32,34 @@ class BookingController {
     const transaction: Transaction = await Booking.sequelize!.transaction();
     try {
       const { showId } = req.params;
-      const { seatIds: rawSeatIds, paymentMethod, showTime, seatNumbers } = req.body;
+      const {
+        seatIds: rawSeatIds,
+        paymentMethod,
+        showTime,
+        seatNumbers,
+      } = req.body;
       const seatIds = rawSeatIds.map(Number);
       const userId = req.user?.id;
 
       if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
       if (!Array.isArray(seatIds) || seatIds.length === 0) {
-        return res.status(400).json({ error: "seatIds must be a non-empty array" });
+        return res
+          .status(400)
+          .json({ error: "seatIds must be a non-empty array" });
       }
 
-      const show = await Show.findByPk(showId, { 
-        attributes: ['id', 'price'],
-        transaction 
+      const show = await Show.findByPk(showId, {
+        attributes: ["id", "price"],
+        transaction,
       });
-      
+
       if (!show) {
         await transaction.rollback();
         return res.status(404).json({ error: "Show not found" });
       }
 
-      // Validate show price
+    
       if (!show.price || show.price <= 0) {
         await transaction.rollback();
         return res.status(400).json({ error: "Show has invalid price" });
@@ -68,7 +78,9 @@ class BookingController {
 
       if (seats.length !== seatIds.length) {
         await transaction.rollback();
-        return res.status(409).json({ error: "Some seats are already booked or invalid" });
+        return res
+          .status(409)
+          .json({ error: "Some seats are already booked or invalid" });
       }
 
       const booking = await Booking.create(
@@ -83,8 +95,12 @@ class BookingController {
       );
 
       await Promise.all(
-        seats.map(seat => 
-          seat.update({ isBooked: true, bookingId: booking.id }, { transaction }))
+        seats.map((seat) =>
+          seat.update(
+            { isBooked: true, bookingId: booking.id },
+            { transaction }
+          )
+        )
       );
 
       await transaction.commit();
@@ -109,7 +125,7 @@ class BookingController {
             }
           );
 
-          // Store pidx in booking
+        
           await booking.update({ pidx: response.data.pidx });
 
           return res.status(200).json({
@@ -119,22 +135,22 @@ class BookingController {
           });
         } catch (khaltiError) {
           console.error("Khalti payment initiation failed:", khaltiError);
-          
-          // Handle Khalti failure
+ 
           await booking.update({ status: "failed" });
           await Seat.update(
             { isBooked: false, bookingId: null },
             { where: { id: seatIds } }
           );
-          
+
           return res.status(500).json({
             error: "Payment initiation failed",
-            details: (khaltiError as any).response?.data || (khaltiError as Error).message
+            details:
+              (khaltiError as any).response?.data ||
+              (khaltiError as Error).message,
           });
         }
       }
-
-      // For non-Khalti payments, mark as confirmed immediately
+ 
       await booking.update({ status: "confirmed" });
       await Payment.create({
         bookingId: booking.id,
@@ -143,26 +159,23 @@ class BookingController {
         status: "completed",
       });
 
-      return res.status(201).json({ 
-        message: "Booking created successfully", 
-        booking 
+      return res.status(201).json({
+        message: "Booking created successfully",
+        booking,
       });
     } catch (error) {
       await transaction.rollback();
       console.error("Booking failed:", error);
-      return res.status(500).json({ 
-        error: "Booking failed", 
-        details: (error as Error).message 
+      return res.status(500).json({
+        error: "Booking failed",
+        details: (error as Error).message,
       });
     }
   };
 
+  public verifyPayment = async (req: Request, res: Response) => {
+    const transaction = await Booking.sequelize!.transaction();
 
-
-
-
-public verifyPayment = async (req: Request, res: Response) => {
-    const transaction: Transaction = await Booking.sequelize!.transaction();
     try {
       const { pidx } = req.body;
 
@@ -170,7 +183,7 @@ public verifyPayment = async (req: Request, res: Response) => {
         return res.status(400).json({ message: "Please provide pidx" });
       }
 
-      // Call Khalti API to verify payment status
+      
       const response = await axios.post(
         "https://a.khalti.com/api/v2/epayment/lookup/",
         { pidx },
@@ -184,49 +197,143 @@ public verifyPayment = async (req: Request, res: Response) => {
       const khaltiResponse = response.data;
       console.log("Khalti lookup response:", khaltiResponse);
 
-      if (khaltiResponse.status === "Completed") {
-        // Find booking associated with the pidx
-        const booking = await Booking.findOne({
-          where: { pidx },
-          transaction,
-        });
-
-        if (!booking) {
-          await transaction.rollback();
-          return res.status(404).json({ message: "Booking not found for this pidx" });
-        }
-
-        // Update booking status to confirmed
-        await booking.update({ status: "confirmed" }, { transaction });
-
-        // Create a payment record in the Payment table
-        await Payment.create(
-          {
-            bookingId: booking.id,
-            amount: khaltiResponse.amount / 100, // Convert from paisa to NPR
-            paymentMethod: "khalti",
-            transactionId: pidx,
-            status: "completed",
-          },
-          { transaction }
-        );
-
-        await transaction.commit();
-
-        return res.status(200).json({
-          message: "Payment verified and booking confirmed!",
-          booking,
-        });
-      } else {
+      if (khaltiResponse.status !== "Completed") {
         await transaction.rollback();
         return res.status(400).json({ message: "Payment not completed" });
       }
+ 
+      const booking = await Booking.findOne({ where: { pidx }, transaction });
+
+      if (!booking) {
+        await transaction.rollback();
+        return res
+          .status(404)
+          .json({ message: "Booking not found for this pidx" });
+      }
+
+  
+      await booking.update({ status: "confirmed" }, { transaction });
+ 
+      const amountRaw = Number(khaltiResponse.total_amount);
+      if (isNaN(amountRaw)) {
+        throw new Error("Invalid amount received from Khalti");
+      }
+
+      await Payment.create(
+        {
+          bookingId: booking.id,
+          amount: amountRaw / 100,  
+          paymentMethod: "KHALTI",
+          transactionId: khaltiResponse.transaction_id,
+          status: "successful",
+        },
+        { transaction }
+      );
+ 
+      await transaction.commit();
+ 
+      const user = await User.findByPk(booking.userId);
+      const show = await Show.findByPk(booking.showId);
+      const seats = await Seat.findAll({ where: { bookingId: booking.id } });
+
+      if (user && user.email && show) {
+        try {
+          const ticketBuffer = await generateTicketPDF(
+            booking,
+            user,
+            show,
+            seats
+          );
+
+          await sendTicketEmail(user.email, ticketBuffer, booking.id);
+        } catch (emailError) {
+          console.error("Failed to send ticket email:", emailError);
+        }
+      }
+
+      return res.status(200).json({
+        message: "Payment verified and booking confirmed!",
+        booking,
+      });
     } catch (error) {
       await transaction.rollback();
       console.error("Verification error:", error);
       return res.status(500).json({ message: "Payment verification failed" });
     }
   };
+
+  public downloadTicket = async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const booking = await Booking.findByPk(id, {
+        include: [
+          { model: User, as: "user" },
+          { model: Show, as: "show" },
+          { model: Seat, as: "seats" },
+        ],
+      });
+
+      if (!booking) {
+        return res.status(404).json({ message: "Booking not found" });
+      }
+
+      const ticketBuffer = await generateTicketPDF(
+        booking,
+        booking.user,
+        booking.show,
+        booking.seats
+      );
+
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename=ticket-${booking.id}.pdf`
+      );
+      res.send(ticketBuffer);
+    } catch (error) {
+      console.error("Ticket download failed:", error);
+      return res.status(500).json({ message: "Failed to generate ticket" });
+    }
+  };
+
+  public resendTicketEmail = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    const booking = await Booking.findByPk(id, {
+      include: [
+        { model: User, as: "user" },
+        { model: Show, as: "show" },
+        { model: Seat, as: "seats" },
+      ],
+    });
+
+    if (!booking) {
+      return res.status(404).json({ message: "Booking not found" });
+    }
+
+    if (!booking.user?.email) {
+      return res.status(400).json({ message: "User email not available" });
+    }
+
+    // Generate the PDF ticket buffer
+    const ticketBuffer = await generateTicketPDF(
+      booking,
+      booking.user,
+      booking.show,
+      booking.seats
+    );
+
+    // Send the ticket email
+    await sendTicketEmail(booking.user.email, ticketBuffer, booking.id);
+
+    return res.status(200).json({ message: "Ticket email resent successfully" });
+  } catch (error) {
+    console.error("Resend email failed:", error);
+    return res.status(500).json({ message: "Failed to resend email" });
+  }
+};
+
   public confirmBooking = async (req: Request, res: Response) => {
     const transaction: Transaction = await Booking.sequelize!.transaction();
     try {
@@ -352,6 +459,18 @@ public verifyPayment = async (req: Request, res: Response) => {
     } catch (error) {
       console.error("Failed to fetch bookings:", error);
       return res.status(500).json({ error: "Failed to fetch bookings" });
+    }
+  };
+  public getAllBookings = async (req: Request, res: Response) => {
+    try {
+      const bookings = await Booking.findAll({
+        include: [{ model: Show }, { model: Seat }],
+      });
+
+      res.status(200).json(bookings);
+    } catch (error) {
+      console.error("Error fetching bookings:", error);
+      res.status(500).json({ error: "Failed to fetch bookings" });
     }
   };
 }

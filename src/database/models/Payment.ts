@@ -17,8 +17,9 @@ export class Payment extends Model {
   @Column({ type: DataType.DECIMAL(10, 2), allowNull: false })
   amount!: number;
 
-  @Column({ type: DataType.ENUM("card", "cash", "online"), allowNull: false })
-  paymentMethod!: "card" | "cash" | "online";
+@Column({ type: DataType.ENUM("card", "cash", "online", "KHALTI"), allowNull: false })
+paymentMethod!: "card" | "cash" | "online" | "KHALTI";
+
 
   @Column({
     type: DataType.ENUM("successful", "failed", "pending"),

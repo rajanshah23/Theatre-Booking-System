@@ -10,7 +10,6 @@ function startServer() {
     console.log(`Server has started at port [${port}]`);
   });
 }
-
 sequelize.sync({ alter: true })
   .then(() => {
     console.log('Tables created successfully!');

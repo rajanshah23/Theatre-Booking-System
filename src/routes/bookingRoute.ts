@@ -5,22 +5,57 @@ import { asyncHandler, isUserLoggedIn } from "../middleware/authMiddleware";
 
 const router = express.Router();
 
+router.get("/", asyncHandler(bookingController.getAllBookings));
 // Get available seats for a show
-router.get('/:showId/seats/available', asyncHandler(bookingController.getAvailableSeats));
+router.get(
+  "/:showId/seats/available",
+  asyncHandler(bookingController.getAvailableSeats)
+);
 
 // Get logged-in user's bookings
-router.get("/users/me/bookings", isUserLoggedIn, asyncHandler(bookingController.getUserBookings));
+router.get(
+  "/users/me/bookings",
+  isUserLoggedIn,
+  asyncHandler(bookingController.getUserBookings)
+);
 
 // Verify Khalti payment and confirm booking
-router.post("/bookings/verify-payment", isUserLoggedIn, asyncHandler(bookingController.verifyPayment));
+router.post(
+  "/bookings/verify-payment",
+  isUserLoggedIn,
+  asyncHandler(bookingController.verifyPayment)
+);
 
 // Create booking & initiate payment
-router.post("/:showId/bookings", isUserLoggedIn, asyncHandler(bookingController.createBooking));
+router.post(
+  "/:showId/bookings",
+  isUserLoggedIn,
+  asyncHandler(bookingController.createBooking)
+);
 
 // Confirm booking manually
-router.patch("/bookings/:bookingId/confirm", isUserLoggedIn, asyncHandler(bookingController.confirmBooking));
+router.patch(
+  "/bookings/:bookingId/confirm",
+  isUserLoggedIn,
+  asyncHandler(bookingController.confirmBooking)
+);
 
 // Cancel booking
-router.delete("/bookings/:bookingId", isUserLoggedIn, asyncHandler(bookingController.cancelBooking));
+router.delete(
+  "/bookings/:bookingId",
+  isUserLoggedIn,
+  asyncHandler(bookingController.cancelBooking)
+);
 
+router.get(
+  "/bookings/:id/ticket",
+  isUserLoggedIn,
+  asyncHandler(bookingController.downloadTicket)
+);
+
+router.post(
+  "/bookings/:id/resend-email",
+  isUserLoggedIn,
+  asyncHandler(bookingController.resendTicketEmail)
+);
 export default router;

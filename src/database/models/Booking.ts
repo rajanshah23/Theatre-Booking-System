@@ -12,8 +12,8 @@ export class Booking extends Model {
   @Column({ type: DataType.DATE, defaultValue: DataType.NOW })
   bookingTime!: Date;
  
-@Column({ type: DataType.ENUM('pending', 'booked', 'cancelled'), defaultValue: 'booked' })
-status!: 'pending' | 'booked' | 'cancelled';
+@Column({ type: DataType.ENUM('pending', 'booked', 'cancelled', 'confirmed'), defaultValue: 'booked' })
+status!: 'pending' | 'booked' | 'cancelled' | 'confirmed';
 @Column({
     type: DataType.STRING,
     allowNull: true,
