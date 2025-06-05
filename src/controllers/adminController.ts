@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { Show } from "../database/models/Show";
-
+import { User } from "../database/models/User";
 export const getAllShows = async (req: Request, res: Response) => {
   try {
     const shows = await Show.findAll();
@@ -13,17 +13,17 @@ export const getAllShows = async (req: Request, res: Response) => {
 export const createShow = async (req: Request, res: Response) => {
   try {
     const {
-      showTitle, // Corrected field name
-      showDescription, // Corrected field name
-      showDate, // Corrected field name
-      showTime, // Corrected field name
-      showTotalSeats, // Corrected field name
-      price, // Added price
+      showTitle,  
+      showDescription,  
+      showDate,  
+      showTime,  
+      showTotalSeats,  
+      price,  
     } = req.body;
 
     const image = req.file?.filename;
 
-    // Check all required fields exist
+    
     if (
       !showTitle ||
       !showDate ||
@@ -80,6 +80,57 @@ export const deleteShow = async (req: Request, res: Response) => {
     await show.destroy();
     res.status(200).json({ success: true, message: "Show deleted" });
   } catch (err) {
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+export const getAllUsers = async (req: Request, res: Response) => {
+  try {
+    const users = await User.findAll({
+      attributes: ["id", "username", "email", "role", "createdAt"],
+    });
+    res.status(200).json({ success: true, users });
+  } catch (err) {
+    console.error("Error fetching users:", err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+export const deleteUser = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  try {
+    const user = await User.findByPk(id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    await user.destroy();
+    res.status(200).json({ success: true, message: "User deleted successfully" });
+  } catch (err) {
+    console.error("Error deleting user:", err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+export const updateUserRole = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { role } = req.body;
+
+  if (!["user", "admin"].includes(role)) {
+    return res.status(400).json({ success: false, message: "Invalid role specified" });
+  }
+
+  try {
+    const user = await User.findByPk(id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    user.role = role;
+    await user.save();
+
+    res.status(200).json({ success: true, message: `User role updated to ${role}` });
+  } catch (err) {
+    console.error("Error updating user role:", err);
     res.status(500).json({ success: false, message: "Server error" });
   }
 };

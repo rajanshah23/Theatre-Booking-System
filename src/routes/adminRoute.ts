@@ -1,5 +1,10 @@
 import express from "express";
-import { isUserLoggedIn, accessTo, Role, asyncHandler } from "../middleware/authMiddleware";
+import {
+  isUserLoggedIn,
+  accessTo,
+  Role,
+  asyncHandler,
+} from "../middleware/authMiddleware";
 import * as adminController from "../controllers/adminController";
 import { upload } from "../middleware/multerMiddleware";
 const router = express.Router();
@@ -15,7 +20,7 @@ router.post(
   "/shows",
   isUserLoggedIn,
   accessTo(Role.Admin),
-    upload.single("image"),  
+  upload.single("image"),
   asyncHandler(adminController.createShow)
 );
 
@@ -23,7 +28,7 @@ router.put(
   "/shows/:id",
   isUserLoggedIn,
   accessTo(Role.Admin),
-    upload.single("image"),  
+  upload.single("image"),
   asyncHandler(adminController.updateShow)
 );
 
@@ -34,4 +39,7 @@ router.delete(
   asyncHandler(adminController.deleteShow)
 );
 
+router.get("/users", asyncHandler(adminController.getAllUsers));
+router.delete("/users/:id", asyncHandler(adminController.deleteUser));
+router.patch("/users/:id/role", asyncHandler(adminController.updateUserRole));
 export default router;
