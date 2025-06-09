@@ -79,6 +79,34 @@ class ReviewController {
       return res.status(500).json({ error: "Failed to fetch user's reviews" });
     }
   };
+   
+  public deleteReview = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const userId = req.user?.id;
+  const role = req.user?.role;
+
+  try {
+    const review = await Review.findByPk(id);
+
+    if (!review) {
+      return res.status(404).json({ success: false, message: "Review not found" });
+    }
+
+  
+    if (review.userId !== Number(userId) && role !== "admin") {
+      return res.status(403).json({ success: false, message: "Unauthorized" });
+    }
+
+    await review.destroy();
+    res.status(200).json({ success: true, message: "Review deleted successfully" });
+  } catch (err) {
+    console.error("Error deleting Review:", err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+
+ 
 }
 
 export default new ReviewController();

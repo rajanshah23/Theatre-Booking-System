@@ -11,5 +11,7 @@ router.post("/", isUserLoggedIn, asyncHandler(reviewController.createReview));
 router.get("/show/:showId", asyncHandler(reviewController.getReviewsByShow));
 
 router.get("/user", isUserLoggedIn, asyncHandler(reviewController.getReviewsByUser));
+
+router.delete("/:id", isUserLoggedIn, asyncHandler(reviewController.deleteReview));
 export default router;
  

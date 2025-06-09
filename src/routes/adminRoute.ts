@@ -1,7 +1,5 @@
 import express from "express";
-import {
-  isUserLoggedIn,
-  accessTo,
+import {isUserLoggedIn,accessTo,
   Role,
   asyncHandler,
 } from "../middleware/authMiddleware";
@@ -39,7 +37,17 @@ router.delete(
   asyncHandler(adminController.deleteShow)
 );
 
+ 
 router.get("/users", asyncHandler(adminController.getAllUsers));
 router.delete("/users/:id", asyncHandler(adminController.deleteUser));
 router.patch("/users/:id/role", asyncHandler(adminController.updateUserRole));
+
+router.get("/payments",asyncHandler(adminController.getAllPayments))
+router.patch("/payments/:id/status",asyncHandler(adminController.updatePaymentStatus))
+
+
+router.get("/bookings",asyncHandler(adminController.getAllBookings))
+router.patch("/bookings/:id/status",asyncHandler(adminController.updateBookingStatus))
+
+
 export default router;

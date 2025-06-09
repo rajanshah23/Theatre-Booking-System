@@ -1,6 +1,11 @@
 import { Request, Response } from "express";
 import { Show } from "../database/models/Show";
 import { User } from "../database/models/User";
+import { Payment } from "../database/models/Payment";
+import { Booking } from "../database/models/Booking";
+import { Seat } from "../database/models/Seat";
+
+
 export const getAllShows = async (req: Request, res: Response) => {
   try {
     const shows = await Show.findAll();
@@ -132,5 +137,82 @@ export const updateUserRole = async (req: Request, res: Response) => {
   } catch (err) {
     console.error("Error updating user role:", err);
     res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+export const getAllPayments = async (req: Request, res: Response) => {
+  try {
+    const payments = await Payment.findAll({
+      include: [
+        {
+          model: Booking,
+          include: [User, Show],
+        },
+      ],
+      order: [["createdAt", "DESC"]],
+    });
+
+    res.status(200).json({ success: true, payments });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Failed to fetch payments", error });
+  }
+};
+
+export const getAllBookings = async (req: Request, res: Response) => {
+  try {
+    const bookings = await Booking.findAll({
+      include: [User, Show, Seat],
+      order: [["createdAt", "DESC"]],
+    });
+
+    res.status(200).json({ success: true, bookings });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Failed to fetch bookings", error });
+  }
+};
+
+export const updateBookingStatus = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { status } = req.body;
+
+  if (!["pending", "booked", "cancelled", "confirmed"].includes(status)) {
+    return res.status(400).json({ message: "Invalid booking status" });
+  }
+
+  try {
+    const booking = await Booking.findByPk(id);
+    if (!booking) {
+      return res.status(404).json({ message: "Booking not found" });
+    }
+
+    booking.status = status as any;
+    await booking.save();
+
+    res.status(200).json({ message: `Booking status updated to ${status}` });
+  } catch (err) {
+    res.status(500).json({ message: "Error updating booking status", error: err });
+  }
+};
+
+export const updatePaymentStatus = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { status } = req.body;
+
+  if (!["successful", "failed", "pending"].includes(status)) {
+    return res.status(400).json({ message: "Invalid payment status" });
+  }
+
+  try {
+    const payment = await Payment.findByPk(id);
+    if (!payment) {
+      return res.status(404).json({ message: "Payment not found" });
+    }
+
+    payment.status = status as any;
+    await payment.save();
+
+    res.status(200).json({ message: `Payment marked as ${status}` });
+  } catch (err) {
+    res.status(500).json({ message: "Error updating payment status", error: err });
   }
 };

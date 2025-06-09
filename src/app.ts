@@ -9,6 +9,7 @@ import seatRoute from "./routes/seatRoute";
 import bookingRoutes from "./routes/bookingRoute";
 import reviewRoute from "./routes/reviewRoute";
 import adminRoute from "./routes/adminRoute"
+import contactRoute from './routes/contactRoute';
 dotenv.config();
 import "./database/connection";  
 
@@ -21,7 +22,7 @@ app.get("/", (req, res) => {
   res.status(200).json({ status: "success", message: "Rest API is working" });
 });
 
- 
+ app.use('/api', contactRoute);
 app.use('/api/admin',adminRoute);
 app.use("/api/auth", userRoute);
 app.use("/api/shows", showRoute);

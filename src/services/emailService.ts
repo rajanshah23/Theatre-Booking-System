@@ -46,3 +46,28 @@ export const sendTicketEmail = async (
 
   return transporter.sendMail(mailOptions);
 };
+
+// Function to send contact form email
+export const sendContactFormEmail = async (
+  name: string,
+  email: string,
+  message: string
+) => {
+  
+  const mailOptions = {
+    from: `Contact Form <${process.env.EMAIL_USER}>`,
+    to: process.env.CONTACT_RECEIVER_EMAIL, 
+    subject: `New Contact Form Submission from ${name}`,
+    text: `You have a new message from your website contact form.\n\nName: ${name}\nEmail: ${email}\nMessage: ${message}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2>New Contact Form Submission</h2>
+        <p><strong>Name:</strong> ${name}</p>
+        <p><strong>Email:</strong> ${email}</p>
+        <p><strong>Message:</strong><br/>${message}</p>
+      </div>
+    `,
+  };
+
+  return transporter.sendMail(mailOptions);
+};
