@@ -68,13 +68,12 @@ class UserController {
       if (!isMatch) {
         return sendResponse(res, 401, "Invalid credentials");
       }
- 
+
       if (user.email === "admin@gmail.com") {
         user.role = "admin";
-        await user.save();  
+        await user.save();
       }
 
-      
       const token = Jwt.sign(
         { userId: user.id, role: user.role },
         process.env.JWT_SECRET_KEY as string,
@@ -170,7 +169,7 @@ class UserController {
   static async handleForgetPassword(req: Request, res: Response) {
     try {
       const { email } = req.body;
-          console.log("handleForgetPassword: email =", email);
+      console.log("handleForgetPassword: email =", email);
       if (!email) return sendResponse(res, 400, "Email is required");
 
       const user = await User.findOne({ where: { email } });
@@ -199,7 +198,7 @@ class UserController {
   static async verifyOtp(req: Request, res: Response) {
     try {
       const { otp, email } = req.body;
-          console.log("verifyOtp: email =", email);
+      console.log("verifyOtp: email =", email);
       if (!otp || !email)
         return sendResponse(res, 400, "OTP and email are required");
 
@@ -223,34 +222,50 @@ class UserController {
     }
   }
 
-  static async resetPassword(req: Request, res: Response) {
-    try {
-      const { newPassword, confirmPassword, email } = req.body;
-        console.log("resetPassword: email =", email);
-      if (!newPassword || !confirmPassword || !email)
-        return sendResponse(res, 400, "All fields are required");
+ static async resetPassword(req: Request, res: Response) { 
+  try {
+    const { newPassword, confirmPassword, email } = req.body;
+    console.log("Reset password request:", { email, newPassword: !!newPassword, confirmPassword: !!confirmPassword });
 
-      if (newPassword !== confirmPassword)
-        return sendResponse(res, 400, "Passwords do not match");
-      if (newPassword.length < 6)
-        return sendResponse(res, 400, "Password must be at least 6 characters");
-
-      const user = await User.findOne({ where: { email } });
-      if (!user) return sendResponse(res, 404, "User not found");
-
-      const hashedPassword = await bcrypt.hash(newPassword, 10);
-      await user.update({
-        password: hashedPassword,
-        otp: null,
-        otpGeneratedTime: null,
-      });
-
-      return sendResponse(res, 200, "Password reset successfully");
-    } catch (error) {
-      console.error("Password reset error:", error);
-      return sendResponse(res, 500, "Internal server error");
+    // Validate email format
+    if (!email || typeof email !== 'string' || !/^\S+@\S+\.\S+$/.test(email)) {
+      return sendResponse(res, 400, "Valid email is required");
     }
+
+    // Check all fields
+    if (!newPassword || !confirmPassword) {
+      return sendResponse(res, 400, "All fields are required");
+    }
+    
+    // Password match check
+    if (newPassword !== confirmPassword) {
+      return sendResponse(res, 400, "Passwords do not match");
+    }
+    
+    // Password length check
+    if (newPassword.length < 6) {
+      return sendResponse(res, 400, "Password must be at least 6 characters");
+    }
+
+    const user = await User.findOne({ where: { email } });
+    if (!user) {
+      console.error(`User not found for email: ${email}`);
+      return sendResponse(res, 404, "User not found");
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await user.update({
+      password: hashedPassword,
+      otp: null,
+      otpGeneratedTime: null,
+    });
+
+    return sendResponse(res, 200, "Password reset successfully");
+  } catch (error) {
+    console.error("Password reset error:", error);
+    return sendResponse(res, 500, "Internal server error");
   }
+}
   static async changePassword(req: Request, res: Response) {
     try {
       const userId = req.user?.id;
