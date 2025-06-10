@@ -60,12 +60,12 @@ class ShowController {
   async createShow(req: MulterRequest, res: Response): Promise<void> {
   try {
     const {
-      showTitle,       // Matches frontend
-      showDescription, // Matches frontend
-      showDate,        // Matches frontend
-      showTime,        // Matches frontend
-      showTotalSeats,  // Matches frontend
-      price,           // Matches frontend
+      showTitle,       
+      showDescription, 
+      showDate,         
+      showTime,         
+      showTotalSeats,   
+      price,            
     } = req.body;
 
     const parsedSeats = Number(showTotalSeats);
@@ -75,7 +75,7 @@ class ShowController {
       ? req.file.filename
       : "placeholder.jpg";
 
-    // Validate required fields
+ 
     if (
       !showTitle ||
       !showDate ||
@@ -95,8 +95,7 @@ class ShowController {
         sendResponse(res, 400, "Total seats and price must be greater than 0");
         return;
       }
-
-      // Check for overlapping show
+ 
       const overlappingShow = await Show.findOne({
         where: {
           date: showDate,
@@ -113,7 +112,7 @@ class ShowController {
         return;
       }
 
-      // Create the show
+  
       const newShow = await Show.create({
         title: showTitle,
         description: showDescription || null,

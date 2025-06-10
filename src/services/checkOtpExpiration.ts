@@ -8,13 +8,13 @@ const checkOtpExpiration = (
 ): boolean => {
   const currentTime = Date.now();
   if (currentTime - parseInt(otpGeneratedTime) <= thresholdTime) {
-    // OTP NOT expired
+  
     sendResponse(res, 200, "Valid OTP, now you can proceed to reset password 😌");
-    return false; // not expired
+    return false;  
   } else {
-    // OTP expired
+  
     sendResponse(res, 403, "OTP expired, Sorry try again later 😭!!");
-    return true; // expired
+    return true;  
   }
 };
 

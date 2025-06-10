@@ -1,10 +1,10 @@
 import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
 
-// Load environment variables from .env file
+ 
 dotenv.config();
 
-// Create the transporter using Gmail SMTP
+ 
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
@@ -13,7 +13,7 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-// Function to send ticket email with PDF attachment
+ 
 export const sendTicketEmail = async (
   email: string,
   ticketBuffer: Buffer,
@@ -46,8 +46,7 @@ export const sendTicketEmail = async (
 
   return transporter.sendMail(mailOptions);
 };
-
-// Function to send contact form email
+ 
 export const sendContactFormEmail = async (
   name: string,
   email: string,
