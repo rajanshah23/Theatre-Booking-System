@@ -4,7 +4,7 @@ import { envConfig } from './config/config';
 import { sequelize } from './database/connection';
 
 function startServer() {
-  const port = envConfig.port || 4000
+  const port =process.env.PORT || 4000
   adminSeeder()
   app.listen(port, () => {
     console.log(`Server has started at port [${port}]`);
