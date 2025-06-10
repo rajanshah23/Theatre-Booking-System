@@ -1,7 +1,7 @@
-import adminSeeder from './src/adminSeeder';
-import app from './src/app';
-import { envConfig } from './src/config/config';
-import { sequelize } from './src/database/connection';
+import adminSeeder from './adminSeeder';
+import app from './app';
+import { envConfig } from './config/config';
+import { sequelize } from './database/connection';
 
 function startServer() {
   const port = envConfig.port || 4000
