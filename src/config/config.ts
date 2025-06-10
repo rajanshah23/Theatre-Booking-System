@@ -8,7 +8,7 @@ export const envConfig = {
   connectionString: process.env.CONNECTION_STRING,
   jwtSecretKey: process.env.JWT_SECRET_KEY || "default-secret-key",
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || "1d",
-  email: process.env.EMAIL,
+  email: process.env.EMAIL_USER || '',
   emailpassword: process.env.EMAIL_PASSWORD,
   adminEmail: process.env.ADMIN_EMAIL,
   adminPassword: process.env.ADMIN_PASSWORD,

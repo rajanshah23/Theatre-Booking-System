@@ -17,7 +17,7 @@ const sendMail = async (data:IData)=>{
         }
     })
     const mailOptions = {
-        from : "Theatre Booking System<shahrajan284gmail.com>", 
+       from: `Theatre Booking System <${envConfig.email}>`, 
         to : data.to, 
         subject : data.subject, 
         text : data.text

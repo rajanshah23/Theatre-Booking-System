@@ -26,7 +26,7 @@ export const sendTicketEmail = async (
     text: 'Thank you for your booking! Your ticket is attached.',
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #e74c3c;">Your Booking is Confirmed!</h2>
+        <h2 style="color:rgb(157, 231, 60);">Your Booking is Confirmed!</h2>
         <p>Thank you for booking with us. Your ticket is attached to this email.</p>
         <p>Booking ID: <strong>#${bookingId}</strong></p>
         <p>You can also download your ticket anytime from your account.</p>

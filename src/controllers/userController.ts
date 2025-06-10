@@ -170,6 +170,7 @@ class UserController {
   static async handleForgetPassword(req: Request, res: Response) {
     try {
       const { email } = req.body;
+          console.log("handleForgetPassword: email =", email);
       if (!email) return sendResponse(res, 400, "Email is required");
 
       const user = await User.findOne({ where: { email } });
@@ -198,6 +199,7 @@ class UserController {
   static async verifyOtp(req: Request, res: Response) {
     try {
       const { otp, email } = req.body;
+          console.log("verifyOtp: email =", email);
       if (!otp || !email)
         return sendResponse(res, 400, "OTP and email are required");
 
@@ -224,6 +226,7 @@ class UserController {
   static async resetPassword(req: Request, res: Response) {
     try {
       const { newPassword, confirmPassword, email } = req.body;
+        console.log("resetPassword: email =", email);
       if (!newPassword || !confirmPassword || !email)
         return sendResponse(res, 400, "All fields are required");
 
