@@ -15,7 +15,7 @@ export class Show extends Model {
   @Column({ type: DataType.STRING, allowNull: false })
   title!: string;
 
-  @Column(DataType.TEXT("long"))
+@Column(DataType.TEXT)
   description?: string;
 
   @Column({ type: DataType.DATEONLY, allowNull: false })
