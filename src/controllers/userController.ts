@@ -227,15 +227,15 @@ class UserController {
     const { newPassword, confirmPassword, email } = req.body;
 
     console.log("Reset password request received:", {
-      email: email ? email : "UNDEFINED OR EMPTY",
+      email,
       hasNewPassword: !!newPassword,
       hasConfirmPassword: !!confirmPassword,
-      bodyKeys: Object.keys(req.body)
+      body:req.body
     });
  
-    if (typeof email !== 'string' || email.trim() === '' || !/^\S+@\S+\.\S+$/.test(email)) {
+    if (typeof email !== 'string' || email.trim() === '') {
       console.error("Invalid email format received:", email);
-      return sendResponse(res, 400, "Valid email is required");
+      return sendResponse(res, 400, "Email is required");
     }
 
     if (!newPassword || !confirmPassword) {
@@ -249,15 +249,14 @@ class UserController {
     if (newPassword.length < 6) {
       return sendResponse(res, 400, "Password must be at least 6 characters");
     }
- 
-    const cleanEmail = email.trim();
+  const trimmedEmail = email.trim();
 
     const user = await User.findOne({
-      where: { email: cleanEmail }   
+      where: { email: trimmedEmail }   
     });
 
     if (!user) {
-      console.error(`User not found for email: ${cleanEmail}`);
+      console.error(`User not found for email: ${trimmedEmail}`);
       return sendResponse(res, 404, "User not found");
     }
 
