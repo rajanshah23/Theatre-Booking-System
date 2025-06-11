@@ -2,7 +2,7 @@ import {Table,Column,Model,DataType,HasMany,BeforeCreate,  PrimaryKey,
   AutoIncrement,} from 'sequelize-typescript';
 import { Booking } from './Booking';
 import { Review } from './Review';
-import bcrypt from 'bcrypt';
+ 
 
 @Table
 export class User extends Model {

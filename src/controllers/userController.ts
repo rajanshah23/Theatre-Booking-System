@@ -222,42 +222,53 @@ class UserController {
     }
   }
 
- static async resetPassword(req: Request, res: Response) { 
+  static async resetPassword(req: Request, res: Response) {
   try {
     const { newPassword, confirmPassword, email } = req.body;
-    console.log("Reset password request:", { email, newPassword: !!newPassword, confirmPassword: !!confirmPassword });
 
-    // Validate email format
-    if (!email || typeof email !== 'string' || !/^\S+@\S+\.\S+$/.test(email)) {
+    console.log("Reset password request received:", {
+      email: email ? email : "UNDEFINED OR EMPTY",
+      hasNewPassword: !!newPassword,
+      hasConfirmPassword: !!confirmPassword,
+      bodyKeys: Object.keys(req.body)
+    });
+ 
+    if (typeof email !== 'string' || email.trim() === '' || !/^\S+@\S+\.\S+$/.test(email)) {
+      console.error("Invalid email format received:", email);
       return sendResponse(res, 400, "Valid email is required");
     }
 
-    // Check all fields
     if (!newPassword || !confirmPassword) {
       return sendResponse(res, 400, "All fields are required");
     }
-    
-    // Password match check
+
     if (newPassword !== confirmPassword) {
       return sendResponse(res, 400, "Passwords do not match");
     }
-    
-    // Password length check
+
     if (newPassword.length < 6) {
       return sendResponse(res, 400, "Password must be at least 6 characters");
     }
+ 
+    const cleanEmail = email.trim();
 
-    const user = await User.findOne({ where: { email } });
+    const user = await User.findOne({
+      where: { email: cleanEmail }   
+    });
+
     if (!user) {
-      console.error(`User not found for email: ${email}`);
+      console.error(`User not found for email: ${cleanEmail}`);
       return sendResponse(res, 404, "User not found");
     }
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
-    await user.update({
+
+    await User.update({
       password: hashedPassword,
       otp: null,
       otpGeneratedTime: null,
+    }, {
+      where: { id: user.id }
     });
 
     return sendResponse(res, 200, "Password reset successfully");
@@ -266,6 +277,7 @@ class UserController {
     return sendResponse(res, 500, "Internal server error");
   }
 }
+
   static async changePassword(req: Request, res: Response) {
     try {
       const userId = req.user?.id;
