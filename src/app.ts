@@ -16,8 +16,10 @@ const app = express();
 
 const allowedOrigins = [
   "http://localhost:5173",
-  "https://theatre-booking-system.onrender.com"  
+  "https://theatre-booking-system.onrender.com",
+  "https://frontend-theatre-booking-system-gao.vercel.app"   
 ];
+
 
 app.use(cors({
   origin: function (origin, callback) {
