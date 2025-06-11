@@ -226,20 +226,16 @@ class UserController {
   try {
     const { newPassword, confirmPassword, email } = req.body;
 
-    console.log("Reset password request received:", {
-      email,
-      hasNewPassword: !!newPassword,
-      hasConfirmPassword: !!confirmPassword,
-      body:req.body
-    });
+    console.log("Reset Password Body:", req.body);
+
  
-    if (typeof email !== 'string' || email.trim() === '') {
-      console.error("Invalid email format received:", email);
-      return sendResponse(res, 400, "Email is required");
+    if (!email || typeof email !== "string" || email.trim() === "") {
+      console.error(" Email is missing or invalid:", email);
+      return sendResponse(res, 400, "Email is required and must be a valid string");
     }
 
     if (!newPassword || !confirmPassword) {
-      return sendResponse(res, 400, "All fields are required");
+      return sendResponse(res, 400, "Both password fields are required");
     }
 
     if (newPassword !== confirmPassword) {
@@ -249,30 +245,32 @@ class UserController {
     if (newPassword.length < 6) {
       return sendResponse(res, 400, "Password must be at least 6 characters");
     }
-  const trimmedEmail = email.trim();
+ 
+    const trimmedEmail = email.trim();
+    console.log("Looking up user with email:", trimmedEmail);
 
-    const user = await User.findOne({
-      where: { email: trimmedEmail }   
-    });
+    const user = await User.findOne({ where: { email: trimmedEmail } });
 
     if (!user) {
-      console.error(`User not found for email: ${trimmedEmail}`);
+      console.error("❌ User not found:", trimmedEmail);
       return sendResponse(res, 404, "User not found");
     }
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
-
-    await User.update({
-      password: hashedPassword,
-      otp: null,
-      otpGeneratedTime: null,
-    }, {
-      where: { id: user.id }
-    });
+    await User.update(
+      {
+        password: hashedPassword,
+        otp: null,
+        otpGeneratedTime: null,
+      },
+      {
+        where: { id: user.id },
+      }
+    );
 
     return sendResponse(res, 200, "Password reset successfully");
   } catch (error) {
-    console.error("Password reset error:", error);
+    console.error("Reset Password Error:", error);
     return sendResponse(res, 500, "Internal server error");
   }
 }
