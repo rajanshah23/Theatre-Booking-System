@@ -24,7 +24,7 @@ app.use(express.json());
  
 const allowedOrigins = [
   "http://localhost:5173",
-  "https://frontend-theatre-booking-system.vercel.app"
+  "https://theatre-booking-system-gamma.vercel.app"
 ];
 
 app.use(cors({
