@@ -59,7 +59,6 @@ class BookingController {
         return res.status(404).json({ error: "Show not found" });
       }
 
-    
       if (!show.price || show.price <= 0) {
         await transaction.rollback();
         return res.status(400).json({ error: "Show has invalid price" });
@@ -108,8 +107,9 @@ class BookingController {
       if (paymentMethod.toUpperCase() === "KHALTI") {
         try {
           const data = {
-            return_url: `http://localhost:5173/payment-success?bookingId=${booking.id}`,
-            website_url: "http://localhost:5173/",
+            return_url: `https://theatre-booking-system-gamma.vercel.app/payment-success?bookingId=${booking.id}`,
+            website_url: "https://theatre-booking-system-gamma.vercel.app/",
+
             amount: totalAmount * 100,
             purchase_order_id: booking.id,
             purchase_order_name: `booking_${booking.id}`,
@@ -125,7 +125,6 @@ class BookingController {
             }
           );
 
-        
           await booking.update({ pidx: response.data.pidx });
 
           return res.status(200).json({
@@ -135,7 +134,7 @@ class BookingController {
           });
         } catch (khaltiError) {
           console.error("Khalti payment initiation failed:", khaltiError);
- 
+
           await booking.update({ status: "failed" });
           await Seat.update(
             { isBooked: false, bookingId: null },
@@ -150,7 +149,7 @@ class BookingController {
           });
         }
       }
- 
+
       await booking.update({ status: "confirmed" });
       await Payment.create({
         bookingId: booking.id,
@@ -183,7 +182,6 @@ class BookingController {
         return res.status(400).json({ message: "Please provide pidx" });
       }
 
-      
       const response = await axios.post(
         "https://a.khalti.com/api/v2/epayment/lookup/",
         { pidx },
@@ -201,7 +199,7 @@ class BookingController {
         await transaction.rollback();
         return res.status(400).json({ message: "Payment not completed" });
       }
- 
+
       const booking = await Booking.findOne({ where: { pidx }, transaction });
 
       if (!booking) {
@@ -211,9 +209,8 @@ class BookingController {
           .json({ message: "Booking not found for this pidx" });
       }
 
-  
       await booking.update({ status: "confirmed" }, { transaction });
- 
+
       const amountRaw = Number(khaltiResponse.total_amount);
       if (isNaN(amountRaw)) {
         throw new Error("Invalid amount received from Khalti");
@@ -222,16 +219,16 @@ class BookingController {
       await Payment.create(
         {
           bookingId: booking.id,
-          amount: amountRaw / 100,  
+          amount: amountRaw / 100,
           paymentMethod: "KHALTI",
           transactionId: khaltiResponse.transaction_id,
           status: "successful",
         },
         { transaction }
       );
- 
+
       await transaction.commit();
- 
+
       const user = await User.findByPk(booking.userId);
       const show = await Show.findByPk(booking.showId);
       const seats = await Seat.findAll({ where: { bookingId: booking.id } });
@@ -297,42 +294,44 @@ class BookingController {
   };
 
   public resendTicketEmail = async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
+    try {
+      const { id } = req.params;
 
-    const booking = await Booking.findByPk(id, {
-      include: [
-        { model: User, as: "user" },
-        { model: Show, as: "show" },
-        { model: Seat, as: "seats" },
-      ],
-    });
+      const booking = await Booking.findByPk(id, {
+        include: [
+          { model: User, as: "user" },
+          { model: Show, as: "show" },
+          { model: Seat, as: "seats" },
+        ],
+      });
 
-    if (!booking) {
-      return res.status(404).json({ message: "Booking not found" });
+      if (!booking) {
+        return res.status(404).json({ message: "Booking not found" });
+      }
+
+      if (!booking.user?.email) {
+        return res.status(400).json({ message: "User email not available" });
+      }
+
+      // Generate the PDF ticket buffer
+      const ticketBuffer = await generateTicketPDF(
+        booking,
+        booking.user,
+        booking.show,
+        booking.seats
+      );
+
+      // Send the ticket email
+      await sendTicketEmail(booking.user.email, ticketBuffer, booking.id);
+
+      return res
+        .status(200)
+        .json({ message: "Ticket email resent successfully" });
+    } catch (error) {
+      console.error("Resend email failed:", error);
+      return res.status(500).json({ message: "Failed to resend email" });
     }
-
-    if (!booking.user?.email) {
-      return res.status(400).json({ message: "User email not available" });
-    }
-
-    // Generate the PDF ticket buffer
-    const ticketBuffer = await generateTicketPDF(
-      booking,
-      booking.user,
-      booking.show,
-      booking.seats
-    );
-
-    // Send the ticket email
-    await sendTicketEmail(booking.user.email, ticketBuffer, booking.id);
-
-    return res.status(200).json({ message: "Ticket email resent successfully" });
-  } catch (error) {
-    console.error("Resend email failed:", error);
-    return res.status(500).json({ message: "Failed to resend email" });
-  }
-};
+  };
 
   public confirmBooking = async (req: Request, res: Response) => {
     const transaction: Transaction = await Booking.sequelize!.transaction();

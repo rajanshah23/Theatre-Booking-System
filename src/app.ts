@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import path from "path";
+
 import userRoute from "./routes/userRoute";
 import showRoute from "./routes/showRoute";
 import seatRoute from "./routes/seatRoute";
@@ -9,25 +10,43 @@ import bookingRoutes from "./routes/bookingRoute";
 import reviewRoute from "./routes/reviewRoute";
 import adminRoute from "./routes/adminRoute";
 import contactRoute from "./routes/contactRoute";
-dotenv.config();
-import "./database/connection";
 import accountRoute from "./routes/accountRoute";
+
+import "./database/connection";
+
+dotenv.config();
+
 const app = express();
 
+// Middleware
 app.use(express.json());
+
+// Serve uploaded files
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+// CORS setup with dynamic origin
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://theatre-booking-system-gamma.vercel.app"
+];
+
 app.use(cors({
-  origin: [
-    "http://localhost:5173",
-    "https://theatre-booking-system-gamma.vercel.app"   
-  ],
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
   credentials: true
 }));
+
+// Health check
 app.get("/", (req, res) => {
-  res.status(200).json({ status: "success", message: "Rest API is working" });
+  res.status(200).json({ status: "success", message: "REST API is working" });
 });
 
+// Routes
 app.use("/api", contactRoute);
 app.use("/api/admin", adminRoute);
 app.use("/api/auth", userRoute);
