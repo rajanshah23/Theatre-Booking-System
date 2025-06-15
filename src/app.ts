@@ -18,8 +18,11 @@ app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.use(cors({
-  origin: 'http://localhost:5173',  
-  credentials: true  
+  origin: [
+    "http://localhost:5173",
+    "https://theatre-booking-system-gamma.vercel.app"   
+  ],
+  credentials: true
 }));
 app.get("/", (req, res) => {
   res.status(200).json({ status: "success", message: "Rest API is working" });
