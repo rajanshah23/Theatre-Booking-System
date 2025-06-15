@@ -17,14 +17,11 @@ import "./database/connection";
 dotenv.config();
 
 const app = express();
-
-// Middleware
 app.use(express.json());
 
-// Serve uploaded files
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
-// CORS setup with dynamic origin
+ 
+// app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+ 
 const allowedOrigins = [
   "http://localhost:5173",
   "https://theatre-booking-system-gamma.vercel.app"
