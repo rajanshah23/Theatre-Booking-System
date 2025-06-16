@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "nodemon src/server.ts",
     "build": "tsc",
-    "start": "node dist/server.js"
+    "start": "node dist/server.js",
+    "setup-storage": "ts-node --files ./scripts/storageSetup.ts"
   },
   "keywords": [],
   "author": "",
@@ -36,7 +37,7 @@
     "@types/cors": "^2.8.18",
     "@types/express": "^5.0.2",
     "@types/jsonwebtoken": "^9.0.9",
-    "@types/node": "^22.15.29",
+    "@types/node": "^22.15.32",
     "@types/nodemailer": "^6.4.17",
     "@types/pdfkit": "^0.13.9",
     "@types/qrcode": "^1.5.5",
