@@ -6,7 +6,7 @@
     "dev": "nodemon src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
-    "setup-storage": "ts-node --files ./scripts/storageSetup.ts"
+    "setup-storage": "ts-node --files src/scripts/storageSetup.ts"
   },
   "keywords": [],
   "author": "",
