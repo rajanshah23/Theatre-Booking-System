@@ -107,8 +107,8 @@ class BookingController {
       if (paymentMethod.toUpperCase() === "KHALTI") {
         try {
           const data = {
-            return_url: `https://theatre-booking-system-gamma.vercel.app/payment-success?bookingId=${booking.id}`,
-            website_url: "https://theatre-booking-system-gamma.vercel.app/",
+            return_url: `http://localhost:5173/payment-success?bookingId=${booking.id}`,
+            website_url: "http://localhost:5173",
 
             amount: totalAmount * 100,
             purchase_order_id: booking.id,

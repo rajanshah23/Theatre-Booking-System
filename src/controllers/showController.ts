@@ -2,7 +2,6 @@ import { Request, Response } from "express";
 import { Show } from "../database/models/Show";
 import sendResponse from "../services/sendResponse";
 import { Op } from "sequelize";
-import { supabase } from "../supabaseClient"; // Add this import for Supabase client
 
 interface MulterRequest extends Request {
   file?: Express.Multer.File;
@@ -58,62 +57,45 @@ class ShowController {
     }
   }
 
-  // Utility: Upload image buffer to Supabase Storage, return public URL or throw error
-  private async uploadImageToSupabase(file: Express.Multer.File): Promise<string> {
-    const fileExt = file.originalname.split(".").pop();
-    const fileName = `${Date.now()}.${fileExt}`;
-    const filePath = `show-images/${fileName}`;
-
-    const { error: uploadError } = await supabase.storage
-      .from("show-images")
-      .upload(filePath, file.buffer, {
-        contentType: file.mimetype,
-        upsert: false,
-      });
-
-    if (uploadError) {
-      throw new Error(`Failed to upload image: ${uploadError.message}`);
-    }
-
-    const { data } = supabase.storage.from("show-images").getPublicUrl(filePath);
-
-    return data.publicUrl;
-  }
-
   async createShow(req: MulterRequest, res: Response): Promise<void> {
-    try {
-      const {
-        showTitle,
-        showDescription,
-        showDate,
-        showTime,
-        showTotalSeats,
-        price,
-      } = req.body;
+  try {
+    const {
+      showTitle,       
+      showDescription, 
+      showDate,         
+      showTime,         
+      showTotalSeats,   
+      price,            
+    } = req.body;
 
-      const parsedSeats = Number(showTotalSeats);
-      const parsedPrice = Number(price);
+    const parsedSeats = Number(showTotalSeats);
+    const parsedPrice = Number(price);
 
-      if (
-        !showTitle ||
-        !showDate ||
-        !showTime ||
-        isNaN(parsedSeats) ||
-        isNaN(parsedPrice)
-      ) {
-        sendResponse(
-          res,
-          400,
-          "Missing or invalid fields: showTitle, showDate, showTime, showTotalSeats, price"
-        );
-        return;
-      }
+    const filename = req.file
+      ? req.file.filename
+      : "placeholder.jpg";
+
+ 
+    if (
+      !showTitle ||
+      !showDate ||
+      !showTime ||
+      isNaN(parsedSeats) ||
+      isNaN(parsedPrice)
+    ) {
+      sendResponse(
+        res,
+        400,
+        "Missing or invalid fields: showTitle, showDate, showTime, showTotalSeats, price"
+      );
+      return;
+    }
 
       if (parsedSeats <= 0 || parsedPrice <= 0) {
         sendResponse(res, 400, "Total seats and price must be greater than 0");
         return;
       }
-
+ 
       const overlappingShow = await Show.findOne({
         where: {
           date: showDate,
@@ -122,21 +104,15 @@ class ShowController {
       });
 
       if (overlappingShow) {
-        sendResponse(res, 409, "A show already exists at this date and time");
+        sendResponse(
+          res,
+          409,
+          "A show already exists at this date and time"
+        );
         return;
       }
 
-      // Upload image to Supabase or use placeholder
-      let imageUrl = "placeholder.jpg"; // fallback
-      if (req.file) {
-        try {
-          imageUrl = await this.uploadImageToSupabase(req.file);
-        } catch (uploadErr: any) {
-          sendResponse(res, 500, uploadErr.message);
-          return;
-        }
-      }
-
+  
       const newShow = await Show.create({
         title: showTitle,
         description: showDescription || null,
@@ -144,7 +120,7 @@ class ShowController {
         time: showTime,
         totalSeats: parsedSeats,
         price: parsedPrice,
-        image: imageUrl,
+        image: filename,
       });
 
       sendResponse(res, 201, "Show created successfully", newShow);
@@ -154,12 +130,13 @@ class ShowController {
     }
   }
 
+ 
   async getAllShows(req: Request, res: Response): Promise<void> {
     try {
       const shows = await Show.findAll({
         order: [["date", "ASC"], ["time", "ASC"]],
       });
-
+      
       sendResponse(res, 200, "Shows retrieved successfully", shows);
     } catch (error: any) {
       sendResponse(res, 500, "Error fetching shows", error.message);
@@ -168,7 +145,7 @@ class ShowController {
 
   async getSingleShow(req: Request, res: Response): Promise<void> {
     try {
-      const id = Number(req.params.id);
+      const id = Number(req.params.id);   
 
       if (isNaN(id)) {
         sendResponse(res, 400, "Invalid show ID");
@@ -191,15 +168,16 @@ class ShowController {
   async updateShow(req: MulterRequest, res: Response): Promise<void> {
     try {
       const { id } = req.params;
-
+    
       const { showTitle, showDescription, showDate, showTime, showTotalSeats, price } = req.body;
+      const filename = req.file?.filename;
 
       const show = await Show.findByPk(id);
       if (!show) {
         sendResponse(res, 404, "Show not found");
         return;
       }
-
+ 
       if (price !== undefined) {
         if (isNaN(Number(price))) {
           sendResponse(res, 400, "Price must be a valid number");
@@ -211,6 +189,7 @@ class ShowController {
         }
       }
 
+       
       if (showDate || showTime) {
         const targetDate = showDate || show.date;
         const targetTime = showTime || show.time;
@@ -219,7 +198,7 @@ class ShowController {
           where: {
             date: targetDate,
             time: targetTime,
-            id: { [Op.ne]: id },
+            id: { [Op.ne]: id }  
           },
         });
 
@@ -229,25 +208,15 @@ class ShowController {
         }
       }
 
-      // Upload new image if file is provided, else keep old image URL
-      let imageUrl = show.image;
-      if (req.file) {
-        try {
-          imageUrl = await this.uploadImageToSupabase(req.file);
-        } catch (uploadErr: any) {
-          sendResponse(res, 500, uploadErr.message);
-          return;
-        }
-      }
-
+  
       await show.update({
         title: showTitle || show.title,
         description: showDescription || show.description,
         date: showDate || show.date,
         time: showTime || show.time,
         totalSeats: showTotalSeats || show.totalSeats,
-        image: imageUrl,
-        price: price !== undefined ? Number(price) : show.price,
+        image: filename || show.image,
+        price: price !== undefined ? Number(price) : show.price,  
       });
 
       sendResponse(res, 200, "Show updated successfully", show);

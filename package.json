@@ -5,15 +5,14 @@
   "scripts": {
     "dev": "nodemon src/server.ts",
     "build": "tsc",
-    "start": "node dist/server.js",
-    "setup-storage": "ts-node --files src/scripts/storageSetup.ts"
+    "start": "node dist/server.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "@supabase/supabase-js": "^2.50.0",
+    "@supabase/supabase-js": "^2.49.8",
     "@types/multer": "^1.4.12",
     "axios": "^1.9.0",
     "bcrypt": "^6.0.0",
@@ -37,7 +36,7 @@
     "@types/cors": "^2.8.18",
     "@types/express": "^5.0.2",
     "@types/jsonwebtoken": "^9.0.9",
-    "@types/node": "^22.15.32",
+    "@types/node": "^22.15.29",
     "@types/nodemailer": "^6.4.17",
     "@types/pdfkit": "^0.13.9",
     "@types/qrcode": "^1.5.5",
