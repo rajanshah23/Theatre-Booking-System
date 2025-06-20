@@ -45,8 +45,8 @@ This is the backend of the Theatre Booking System built with **Node.js**, **Expr
 
 ```bash
 # Clone the repository
-git clone https://github.com/rajanshah23/backend-Theatre-booking-system
-cd backend-Theatre-booking-system
+git clone https://github.com/rajanshah23/Theatre-booking-system
+cd backend Theatre-booking-system
 
 # Install dependencies
 npm install
